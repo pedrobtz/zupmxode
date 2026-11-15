@@ -416,6 +416,36 @@ events and the results compared at the §6.3 tolerances. The suite is
 recorded and `zupmxode` follows PREDPP. Each tier is compared against
 the oracles, and the tiers against each other.
 
+How the suite is held, decided 2026-11-15 when it was built (roadmap
+Stage 1):
+
+- **Recorded, then compared.** `tools/make-corpus.R` solves the corpus
+  with both oracles at rtol 1e-10, atol 1e-12, and writes their answers
+  to `tests/testthat/fixtures/oracle/` with the engine versions. Tests
+  compare with those fixtures, so the `nosuggests` leg still checks
+  answers; rxode2 is in `Suggests` only so a test can show the fixtures
+  are still what rxode2 gives.
+- **Paired models.** mrgsolve's `modlib()` and the §6.2 event features
+  enter as models written in both languages (`tools/corpus/`): pk1, pk2
+  and pk3 as ODEs and closed forms, Michaelis–Menten, an indirect
+  response, an effect compartment, lag and bioavailability, modelled rate
+  and duration, a time-varying covariate. Running `modlib()`'s own text
+  needs a translator, which is `zupmxio`'s; until then these ports are
+  the mrgsolve side.
+- **nlmixr2lib** models are rxode2-only cases: residual-error lines
+  removed, initial thetas, etas at 0, reference covariates. Those needing
+  an input the generator has no value for are listed as skipped in the
+  manifest, not dropped silently.
+- **Settings made explicit**, each of which caused a disagreement before
+  it was set: mrgsolve reads covariates last-observation-carried-forward
+  (`nocb = FALSE`); both engines iterate steady state to the solve's own
+  tolerance; doses sort before observations at the same time. Remaining
+  disagreements are listed in `disagreements.csv`, each with a PREDPP
+  note in `disagreements.md`; there are none on the 2026-11-15 corpus.
+- **Tables** are compared by `tests/testthat/helper-tables.R`: a value
+  matches when within atol or within rtol of the larger magnitude, the
+  rule `dazdiff` uses, through `dazdiff` when installed (D16).
+
 ## 8. Errors
 
 - Compile errors name the construct, its position in the model and the

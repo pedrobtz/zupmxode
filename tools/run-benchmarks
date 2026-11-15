@@ -1,0 +1,226 @@
+#!/usr/bin/env Rscript
+# The performance rows of design §10, measured on this machine and appended
+# to .agents/benchmarks.csv; .agents/benchmarks.md is rewritten from it.
+#
+#   tools/run-benchmarks            # every engine installed
+#   tools/run-benchmarks rxode2     # one engine
+#
+# Engines: rxode2 and mrgsolve now (the oracles' baseline, roadmap Stage 1);
+# zupmxode joins in Stage 11. The 1e6-subject row takes one observation per
+# subject, so it fits in under 2 GB of memory. Each row is timed once, after one warm-up run
+# where the row is a solve, and recorded met or not. "8 threads" rows run
+# at min(8, cores) threads; the thread count is recorded with the row.
+
+suppressPackageStartupMessages(library(stats))
+stopifnot(file.exists("DESCRIPTION"))
+args <- commandArgs(trailingOnly = TRUE)
+engines <- if (length(args)) args else c("rxode2", "mrgsolve")
+engines <- engines[vapply(engines, requireNamespace, NA, quietly = TRUE)]
+threads <- min(8L, parallel::detectCores())
+machine <- paste(Sys.info()[["sysname"]], R.version$arch,
+                 tryCatch(system("sysctl -n machdep.cpu.brand_string",
+                                 intern = TRUE),
+                          error = function(e) "", warning = function(w) ""),
+                 paste(parallel::detectCores(), "cores"))
+today <- format(Sys.Date())
+results <- list()
+note <- function(row, engine, value, unit, detail = "") {
+  cat(sprintf("%-28s %-9s %12.4g %-8s %s\n", row, engine, value, unit, detail))
+  results[[length(results) + 1L]] <<- data.frame(
+    date = today, machine = machine, row = row, engine = engine,
+    value = signif(value, 4), unit = unit, detail = detail
+  )
+}
+elapsed <- function(expr) {
+  unname(system.time(expr, gcFirst = TRUE)[["elapsed"]])
+}
+
+# Models: the §5 two-compartment model, its closed form, and the synthetic
+# EJCP workload (§10, Q3): a two-compartment antibody given as a 60-minute
+# 1200 mg infusion every 3 weeks for seven cycles, 10 samples per cycle.
+rx_2cpt <- function(tag = "") paste0("
+cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v); ka <- exp(tka)
+q <- exp(tq); vp <- exp(tvp)
+d/dt(depot) <- -ka * depot
+d/dt(central) <- ka * depot - (cl + q) / v * central + q / vp * periph
+d/dt(periph) <- q / v * central - q / vp * periph
+cp <- central / v", tag)
+mrg_2cpt <- function(tag = "") paste0("
+$PARAM tcl = 0, tv = 3, tka = -0.7, tq = 1, tvp = 4, eta_cl = 0, eta_v = 0
+$CMT depot central periph
+$MAIN
+double cl = exp(tcl + eta_cl);
+double v = exp(tv + eta_v);
+double ka = exp(tka);
+double q = exp(tq);
+double vp = exp(tvp);
+$ODE
+dxdt_depot = -ka * depot;
+dxdt_central = ka * depot - (cl + q) / v * central + q / vp * periph;
+dxdt_periph = q / v * central - q / vp * periph;
+$TABLE capture cp = central / v;
+", tag)
+theta <- c(tcl = 0, tv = 3, tka = -0.7, tq = 1, tvp = 4)
+
+population <- function(n, seed = 1) {
+  set.seed(seed)
+  data.frame(id = seq_len(n), eta.cl = rnorm(n, 0, 0.3),
+             eta.v = rnorm(n, 0, 0.3))
+}
+
+# An event table for n subjects: doses into cmt, observations at times.
+events <- function(n, times, cmt, amt = 100, ii = 24, addl = 6, rate = 0,
+                   dose_cmt_number = 1L) {
+  dose <- data.frame(id = seq_len(n), time = 0, evid = 1, amt = amt,
+                     cmt = dose_cmt_number, rate = rate, ii = ii, addl = addl)
+  obs <- data.frame(id = rep(seq_len(n), each = length(times)),
+                    time = rep(times, n), evid = 0, amt = 0,
+                    cmt = dose_cmt_number, rate = 0, ii = 0, addl = 0)
+  d <- rbind(dose, obs)
+  d[order(d$id, d$time, d$evid == 0), ]
+}
+
+ejcp_events <- function(n) {
+  cycles <- 0:6 * 21
+  per_cycle <- c(0.04, 0.5, 1, 2, 4, 7, 10, 14, 17, 20.9)
+  times <- as.vector(outer(per_cycle, cycles, `+`))
+  events(n, times, cmt = 2, amt = 1200, ii = 21, addl = 6, rate = 1200 * 24,
+         dose_cmt_number = 2L)
+}
+
+# ---------------------------------------------------------------------------
+if ("rxode2" %in% engines) {
+  suppressPackageStartupMessages(library(rxode2))
+  # A fresh model text each time, so rxode2's cache of compiled models
+  # cannot answer for the compiler.
+  tag <- function() sprintf("\n# %s", paste(sample(letters, 12), collapse = ""))
+
+  t <- elapsed(m2 <- rxode2(rx_2cpt(tag())))
+  note("compile_2cpt", "rxode2", t, "s")
+
+  lin <- rxode2(paste0("cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v)
+ka <- exp(tka)\ncp <- linCmt()", tag()))
+  pop <- population(1e6)
+  ev <- events(1e6, times = 24, cmt = "depot")
+  rxSolve(lin, ev[ev$id <= 1000, ], params = theta[c("tcl", "tv", "tka")],
+          iCov = pop[1:1000, ], cores = threads)
+  t <- elapsed(rxSolve(lin, ev, params = theta[c("tcl", "tv", "tka")],
+                       iCov = pop, cores = threads, returnType = "data.frame"))
+  note("closed_form_1e6", "rxode2", t, "s",
+       sprintf("1e6 subjects x 1 obs, %d threads", threads))
+
+  pop <- population(1e3)
+  ev <- events(1e3, times = seq(0.168, 168, length.out = 1e3), cmt = "depot")
+  rxSolve(m2, ev[ev$id <= 10, ], params = theta, iCov = pop[1:10, ])
+  t <- elapsed(rxSolve(m2, ev, params = theta, iCov = pop, cores = 1L,
+                       returnType = "data.frame"))
+  note("ode_2cpt_1thread", "rxode2", t, "s", "1e3 subjects x 1e3 obs")
+  t <- elapsed(rxSolve(m2, ev, params = theta, iCov = pop, cores = threads,
+                       returnType = "data.frame"))
+  note("ode_2cpt_threads", "rxode2", t, "s",
+       sprintf("1e3 subjects x 1e3 obs, %d threads", threads))
+
+  ev <- ejcp_events(1e3)
+  t <- elapsed(o <- rxSolve(m2, ev, params = theta, iCov = population(1e3),
+                            cores = 1L, returnType = "data.frame"))
+  note("ejcp_obs_per_s", "rxode2", nrow(o) / t, "obs/s",
+       sprintf("1e3 subjects x 70 obs, 1 thread, %.2f s", t))
+
+  ev <- events(10, times = c(1, 4, 12, 24, 72, 168), cmt = "depot")
+  t <- elapsed(for (i in seq_len(200)) {
+    mi <- rxode2(sub("cl <- exp(tcl + eta.cl)",
+                     sprintf("cl <- exp(tcl + eta.cl) * %s", 1 + i / 1000),
+                     rx_2cpt(tag()), fixed = TRUE))
+    rxSolve(mi, ev, params = theta, iCov = population(10))
+  })
+  note("candidates_200", "rxode2", t, "s", "compile and solve 10 subjects")
+}
+
+if ("mrgsolve" %in% engines) {
+  suppressPackageStartupMessages(library(mrgsolve))
+  t <- elapsed(m2 <- mcode(paste0("bench", sample(1e6, 1)), mrg_2cpt(),
+                           quiet = TRUE))
+  note("compile_2cpt", "mrgsolve", t, "s")
+
+  mrg_pop <- function(n) {
+    p <- population(n)
+    data.frame(ID = p$id, eta_cl = p$eta.cl, eta_v = p$eta.v)
+  }
+  as_mrg <- function(ev) {
+    names(ev)[names(ev) == "id"] <- "ID"
+    ev
+  }
+  lin <- mcode(paste0("benchlin", sample(1e6, 1)), "
+$PARAM tcl = 0, tv = 3, tka = -0.7, eta_cl = 0, eta_v = 0
+$CMT depot central
+$PKMODEL ncmt = 1, depot = TRUE
+$MAIN
+double CL = exp(tcl + eta_cl);
+double V = exp(tv + eta_v);
+double KA = exp(tka);
+$TABLE capture cp = central / V;
+", quiet = TRUE)
+  ev <- as_mrg(events(1e6, times = 24, cmt = 1))
+  ev <- merge(ev, mrg_pop(1e6), by = "ID")
+  ev <- ev[order(ev$ID, ev$time, ev$evid == 0), ]
+  t <- elapsed(mrgsim_d(lin, ev, obsonly = TRUE, output = "df"))
+  note("closed_form_1e6", "mrgsolve", t, "s",
+       "1e6 subjects x 1 obs, 1 thread (mrgsolve has no threads)")
+
+  ev <- as_mrg(events(1e3, times = seq(0.168, 168, length.out = 1e3), cmt = 1))
+  ev <- merge(ev, mrg_pop(1e3), by = "ID")
+  ev <- ev[order(ev$ID, ev$time, ev$evid == 0), ]
+  mrgsim_d(m2, ev[ev$ID <= 10, ], obsonly = TRUE)
+  t <- elapsed(mrgsim_d(m2, ev, obsonly = TRUE, output = "df"))
+  note("ode_2cpt_1thread", "mrgsolve", t, "s", "1e3 subjects x 1e3 obs")
+
+  ev <- as_mrg(ejcp_events(1e3))
+  ev <- merge(ev, mrg_pop(1e3), by = "ID")
+  ev <- ev[order(ev$ID, ev$time, ev$evid == 0), ]
+  t <- elapsed(o <- mrgsim_d(m2, ev, obsonly = TRUE, output = "df"))
+  note("ejcp_obs_per_s", "mrgsolve", nrow(o) / t, "obs/s",
+       sprintf("1e3 subjects x 70 obs, 1 thread, %.2f s", t))
+
+  ev <- as_mrg(events(10, times = c(1, 4, 12, 24, 72, 168), cmt = 1))
+  ev <- merge(ev, mrg_pop(10), by = "ID")
+  ev <- ev[order(ev$ID, ev$time, ev$evid == 0), ]
+  t <- elapsed(for (i in seq_len(200)) {
+    mi <- mcode(paste0("cand", i, "_", sample(1e6, 1)),
+                sub("double cl = exp(tcl + eta_cl);",
+                    sprintf("double cl = exp(tcl + eta_cl) * %s;", 1 + i / 1000),
+                    mrg_2cpt(), fixed = TRUE), quiet = TRUE)
+    mrgsim_d(mi, ev, obsonly = TRUE)
+  })
+  note("candidates_200", "mrgsolve", t, "s", "compile and solve 10 subjects")
+}
+
+# ---------------------------------------------------------------------------
+csv <- file.path(".agents", "benchmarks.csv")
+new <- do.call(rbind, results)
+all <- if (file.exists(csv)) rbind(utils::read.csv(csv), new) else new
+utils::write.csv(all, csv, row.names = FALSE)
+
+targets <- c(
+  compile_2cpt = "under 20 ms",
+  closed_form_1e6 = "matches rxode2 `linCmt()`",
+  ode_2cpt_1thread = "within 1.5x of rxode2",
+  ode_2cpt_threads = "within 1.5x of rxode2",
+  ejcp_obs_per_s = "above 5,000 obs/s",
+  candidates_200 = "faster than rxode2 end to end"
+)
+latest <- all[!duplicated(all[c("row", "engine")], fromLast = TRUE), ]
+md <- c(
+  "# Benchmarks",
+  "",
+  "The rows of [design §10](design.md#10-performance-targets), written by",
+  "`tools/run-benchmarks` from `benchmarks.csv`, which keeps every run.",
+  "This table shows the latest run of each row and engine. Regenerated,",
+  "never edited.",
+  "",
+  "| Row | Target | Engine | Value | Unit | Detail | Date | Machine |",
+  "| --- | --- | --- | --- | --- | --- | --- | --- |",
+  sprintf("| %s | %s | %s | %s | %s | %s | %s | %s |", latest$row,
+          targets[latest$row], latest$engine, format(latest$value),
+          latest$unit, latest$detail, latest$date, latest$machine)
+)
+writeLines(md, file.path(".agents", "benchmarks.md"))

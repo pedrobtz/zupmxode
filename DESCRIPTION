@@ -17,9 +17,12 @@ Config/roxygen2/version: 8.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Suggests: 
+    dazdiff,
     knitr,
     rmarkdown,
-    testthat (>= 3.0.0)
+    rxode2,
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 URL: https://pedrobtz.github.io/zupmxode/,
     https://github.com/pedrobtz/zupmxode
@@ -28,5 +31,6 @@ LinkingTo:
     zumir,
     zuexact
 Remotes: 
+    pedrobtz/dazdiff,
     pedrobtz/zumir
 VignetteBuilder: knitr
