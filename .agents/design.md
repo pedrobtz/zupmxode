@@ -247,7 +247,7 @@ depend on individual parameters and covariates.
   observation times, for non-stiff models where it beats LSODA.
 
 The default is the most specific solver the classification allows;
-`method=` overrides it, and `zupmxode_info(model)` says what was chosen
+`method=` overrides it, and `pmx_ode_info(model)` says what was chosen
 and why.
 
 ### 4.4 Parallel runtime (C)
@@ -261,10 +261,10 @@ main thread. Without OpenMP the same code runs on one thread.
 
 ### 4.5 R layer
 
-`zupmxode_model()` parses, compiles and lowers; `zupmxode_sim()`
+`pmx_ode_model()` parses, compiles and lowers; `pmx_ode_sim()`
 validates the event table, draws etas and samples residual error in R,
 calls C once with every subject's parameters, and returns a data frame.
-`zupmxode_solve()` is the deterministic core: parameters per subject in,
+`pmx_ode_solve()` is the deterministic core: parameters per subject in,
 predictions out.
 
 ### 4.6 Per-subject evaluation (C API)
@@ -288,7 +288,7 @@ int zupmxode_subject_eval(const zupmxode_model *m,
   has already built, so neither is rebuilt per call.
 - `pred` and `var` have one entry per observation row of `s`. `var` is
   the residual variance under the error model and Sigma carried in
-  `opts`, one of the four forms `zupmxode_sim()` applies (Q2): additive,
+  `opts`, one of the four forms `pmx_ode_sim()` applies (Q2): additive,
   proportional, combined, exponential, evaluated by the `err` block. The
   caller forms the likelihood without re-implementing the error models.
 - `opts` carries the solver choice and tolerances. An estimator taking
@@ -304,19 +304,19 @@ The struct reserves room for sensitivity outputs (§14) without an ABI
 break: `opts` has a version field, and a later version adds
 `dpred_deta` and `dvar_deta` buffers behind it. v0.1.0 fills neither.
 
-The same call is exported to R as `zupmxode_subject_eval(model, subject,
+The same call is exported to R as `pmx_ode_subject_eval(model, subject,
 theta, eta, sigma, tol)`, on a subject prepared once by
-`zupmxode_subjects(model, data)`. An estimator prototyped in R pays one
+`pmx_ode_subjects(model, data)`. An estimator prototyped in R pays one
 R call per subject per evaluation, not per solver step, which is the
 trade RFC 0072 makes in its first version.
 
 This costs little now and a rewrite later: the solvers already take
 their workspace from a per-thread arena (§4.4), so the entry point is a
-thin layer over the code `zupmxode_solve()` runs.
+thin layer over the code `pmx_ode_solve()` runs.
 
 ### 4.7 Lowering and execution tiers (C, through `zumir`)
 
-`zupmxode_model()` passes the IR to C, which lowers each block to one MIR
+`pmx_ode_model()` passes the IR to C, which lowers each block to one MIR
 function with a fixed C signature, for example
 
 ```c
@@ -341,36 +341,36 @@ Lowering and generation happen once per model, on the main thread,
 before any parallel region, in a MIR context owned by the model object
 and released by its finalizer. MIR contexts are not shared between
 threads; the generated code is, because it is plain re-entrant code
-over the arena it is given. `zupmxode_info()` reports the tier, the time
-lowering took and the size of the generated code. `zupmxode_tier(m,
+over the arena it is given. `pmx_ode_info()` reports the tier, the time
+lowering took and the size of the generated code. `pmx_ode_tier(m,
 "interp")` forces the interpreter, which the test suite uses to compare
 the two (§9).
 
 ## 5. Public R API (v0.1.0 shape)
 
 ```r
-m <- zupmxode_model({
+m <- pmx_ode_model({
   ka <- exp(tka + eta.ka); cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v)
   d/dt(depot)   <- -ka * depot
   d/dt(central) <-  ka * depot - cl / v * central
   cp <- central / v
 })
-zupmxode_info(m)    # states, parameters, solver, tier, lowering time
+pmx_ode_info(m)    # states, parameters, solver, tier, lowering time
 
-ev <- zupmxode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
+ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
                       time = seq(0, 168, by = 1))
-out <- zupmxode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
+out <- pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
                                         eta.ka = 0, eta.cl = 0,
                                         eta.v = 0))
 
 set.seed(1)
-sim <- zupmxode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
+sim <- pmx_ode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
                     omega = diag(c(0.1, 0.1, 0.1)),
                     sigma = list(cp = prop(0.1)), n = 1000)
-zupmxode_threads(8)
-zupmxode_solve(m, nonmem_data)   # a NONMEM-style data frame as events
-zupmxode_method(m, "lsoda")      # override the solver
-zupmxode_tier(m, "interp")       # override the tier
+pmx_ode_threads(8)
+pmx_ode_solve(m, nonmem_data)   # a NONMEM-style data frame as events
+pmx_ode_method(m, "lsoda")      # override the solver
+pmx_ode_tier(m, "interp")       # override the tier
 ```
 
 ## 6. Semantics
@@ -451,7 +451,7 @@ the oracles, and the tiers against each other.
 - Fuzz targets over the parser, the lowering and the scheduler, the last
   two built standalone without R.
 - Allocation test: the parallel region allocates nothing on the R heap.
-- `zupmxode_subject_eval()` against `zupmxode_solve()` on every model in
+- `pmx_ode_subject_eval()` against `pmx_ode_solve()` on every model in
   the suite: identical predictions. The same call from eight threads on
   different subjects of one model: identical to the serial results.
 
@@ -609,6 +609,18 @@ decides it and the maintainer may overturn it.
   is on CRAN by then, so its release does not gate this package. Answers
   Q9.
 
+- **D17 (M), 2026-11-15.** The R functions take the sub-family prefix
+  of `zupmxio`'s D24: `pmx_ode_model()`, `pmx_ode_solve()`,
+  `pmx_ode_sim()` and so on, beside RFC 0072's `pmx_fit()`. The C API
+  and its types keep `zupmxode_`. Answers Q6.
+- **D18 (M), 2026-11-15.** A saved model serialises only the IR; code is
+  regenerated on load, which takes under a millisecond, so nothing
+  specific to a MIR version is ever stored. Answers Q7.
+- **D19 (M), 2026-11-15.** `pmx_ode_sim()` ships the four residual error
+  models (additive, proportional, combined, exponential); any other is
+  a function the user applies to the predictions, as the documentation
+  shows. Answers Q2.
+
 ## 14. Later versions, in the order they are expected
 
 - **Dual-number code.** The compiler emits each block a second time over
@@ -652,7 +664,7 @@ decides it and the maintainer may overturn it.
   package (an SBML or FMI engine, RFC 0053) could emit it directly, or
   stay internal until the instruction set settles? This RFC keeps it
   internal for v0.1.0.
-- **Q2.** Should `zupmxode_sim()` support residual error models beyond
+- **Q2. Decided by D19, 2026-11-15.** Should `pmx_ode_sim()` support residual error models beyond
   additive, proportional, combined and exponential at v0.1.0, or defer
   to the user applying a function to predictions? This RFC ships the
   four and documents the function route.
@@ -665,18 +677,18 @@ decides it and the maintainer may overturn it.
 - **Q5.** Should v0.1.0 wait for zuspecial#61 and `zuspecial` on CRAN so
   the Michaelis–Menten closed form ships at release? This RFC does not
   wait; the general solver is the fallback and §14 carries the form.
-- **Q6.** `zupmxio`'s D24 gives the sub-family the `pmx_` function
+- **Q6. Decided by D17, 2026-11-15.** `zupmxio`'s D24 gives the sub-family the `pmx_` function
   prefix, and RFC 0072 follows it with `pmx_fit()`. Should this
   package's R functions be `pmx_ode_model()`, `pmx_ode_solve()` and so
   on, rather than `zupmxode_*`? This RFC keeps `zupmxode_*` so the
   engine's API reads as its own; the C API keeps `zupmxode_` either
   way.
-- **Q7.** Should a compiled model's generated code be cached across
+- **Q7. Decided by D18, 2026-11-15.** Should a compiled model's generated code be cached across
   sessions, with MIR's binary format, or regenerated on load? Generation
   is fast enough that this RFC regenerates, and serialises only the IR.
-- **Q8. Decided by D15, 2026-11-15.** `zumir`'s Q5 (decided 2026-11-13) leaves no tier where W+X
-  memory is refused, and says `zupmxode` brings its own IR interpreter
-  for that case; §2 puts that interpreter out of v0.1.0 and §4.7 assumed
+- **Q8. Decided by D15, 2026-11-15.** `zumir`'s Q5 (decided
+  2026-11-13) leaves no tier where W+X memory is refused, and says
+  `zupmxode` brings its own IR interpreter for that case; §2 puts that interpreter out of v0.1.0 and §4.7 assumed
   MIR's interpreter covered it. Does v0.1.0 ship an IR interpreter, or
   report such a system as unsupported with a classed error naming
   `zumir_tier()`? Proposed: the classed error at v0.1.0, the
