@@ -18,8 +18,8 @@ is the one §4.7 describes.
 | --- | --- | --- | --- | --- | --- |
 | 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | [#21](https://github.com/pedrobtz/zupmxode/pull/21) | 2026-11-15 |
 | 1 | [Oracle corpus and baseline](#stage-1--oracle-corpus-and-baseline) | quick | [#3](https://github.com/pedrobtz/zupmxode/issues/3) | [#22](https://github.com/pedrobtz/zupmxode/pull/22) | 2026-11-15 |
-| 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | [#23](https://github.com/pedrobtz/zupmxode/pull/23) | 2026-11-15 |
-| 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | | |
+| 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | [#23](https://github.com/pedrobtz/zupmxode/pull/23) | 2026-11-16 |
+| 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | | 2026-11-16 |
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | | |
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | | |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | | |
@@ -197,6 +197,10 @@ built on it.
   `lgamma()` are the less accurate (design §4.1). R stays the oracle at
   poles, infinities, NaN and zero.
 - `zumir` went into `Imports` (design D20).
+- The fuzz `reach-floor` (88%, under the 92.1% the first run reached) was
+  set in Stage 3's pull request: it can be chosen only once a run has
+  reported the reach, and pushing it to Stage 2 would have rerun the
+  full profile for one line of workflow.
 
 **Design.** [§4.1](design.md#41-parser-and-compiler-r),
 [§4.7](design.md#47-lowering-and-execution-tiers-c-through-zumir),
@@ -238,6 +242,12 @@ classified, folded and hoisted, and runs on both tiers.
 
 - IR builds for every corpus model in the §6.1 subset.
 - Every Tests line exists, uses its oracle, and was seen to fail.
+
+**Deviation, 2026-11-15.** The language's oracle is R itself: each
+construct and each corpus model without `linCmt()` is evaluated by R on
+the same values and compared with the compiled blocks. `linCmt()`'s
+expansion is checked against its equations written out in the test.
+Every corpus model compiles but one, refused for `ifelse()`.
 
 **Design.** [§4.1](design.md#41-parser-and-compiler-r),
 [§6.1](design.md#61-the-language), [§8](design.md#8-errors), D3.

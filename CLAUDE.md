@@ -69,7 +69,12 @@ See `.agents/design.md` §4 for the whole. Built so far:
 - `src/zpx_model.c`: the model's external pointer and finalizer, and the
   `.Call` entries. Failures of the IR or of MIR come back as status lists;
   `R/model.R` raises the classed condition.
-- `R/ir.R`: the IR assembler (tests now, the compiler from Stage 3);
+- `R/compile.R`: the compiler, R's parse to IR text for the assembler:
+  statements, names, `linCmt()`'s expansion, the classifier, and one
+  generator for every block (DCE by statement, folding through the math
+  table, CSE by value, `ivl` hoisting; `compile_model(opts =)` switches
+  each off for the tests). `R/pmx_ode_model.R` is the export.
+- `R/ir.R`: the IR assembler;
   `R/model.R`: tiers, lowering, regeneration after `readRDS()` (D18).
 - `src/zupmxode.c`: registration only.
 
@@ -117,6 +122,9 @@ Helpers:
   sources it, so tests and fixtures solve the same way.
 - `helper-models.R`: hand-built IR models, each with its answer written
   in R; `available_tiers()` lists the tiers this session runs.
+- `helper-compile.R`: `run_blocks()` runs a compiled model's blocks as
+  the solvers will; `r_eval_model()` evaluates the same statements in R,
+  the compiler's oracle.
 
 `fixtures/math-reference.csv` is the math table's oracle, from
 `tools/make-math-reference.R` (needs Rmpfr); `tests/fuzz/corpus/` the
