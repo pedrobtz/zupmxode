@@ -88,7 +88,8 @@ Helpers: none yet. Runtime: none yet.
 
 Shared r-actions workflows, called from `.github/workflows/`:
 `R-CMD-check.yaml` (with the Windows R-devel row), `native-checks.yaml`
-(sanitizers, valgrind, LTO, rchk, analyzers, cran-special),
+(valgrind, LTO, rchk, analyzers, cran-special; sanitizers from Stage 2,
+r-actions#68),
 `gctorture.yaml` (wide step on pull requests, step 20 daily and on
 dispatch), `coverage.yaml` (`native: true`), `assurance.yaml` and
 `platforms.yaml`. `pkgdown.yaml` builds and deploys the site.

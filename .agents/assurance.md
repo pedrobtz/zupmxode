@@ -34,7 +34,7 @@ call to r-actions.
 
 | Check         | Status  | Where              |
 | ------------- | ------- | ------------------ |
-| sanitizers    | done    | native-checks.yaml |
+| sanitizers    | gap #4  |                    |
 | valgrind      | done    | native-checks.yaml |
 | rchk          | done    | native-checks.yaml |
 | gctorture     | done    | gctorture.yaml     |
