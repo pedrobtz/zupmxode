@@ -1,0 +1,6 @@
+ka <- exp(lka)
+cl <- exp(lcl)
+vc <- exp(lvc)
+vp <- exp(lvp)
+q <- exp(lq)
+Cc <- linCmt()

@@ -1,0 +1,12 @@
+"name","value"
+"lts0",0.3
+"ltsmax",0.9
+"lka",0.45
+"lcl",1
+"lvc",3.45
+"lkg",0.7
+"lkd",0.7
+"lgamma",0.95
+"CcpropSd",0.5
+"tumorSizepropSd",0.5
+"tumorSizeaddSd",30
