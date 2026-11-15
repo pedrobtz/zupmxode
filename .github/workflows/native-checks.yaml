@@ -23,12 +23,18 @@ concurrency:
 # gctorture.yml, with step 20 on a schedule.
 jobs:
 
-  # sanitizers: added in Stage 2, with the first C that has something to
-  # instrument. Today's C (a registration entry point and a constant) emits
-  # no UBSan check, so the job's instrumentation verifier, which looks for a
-  # __ubsan symbol, fails before R CMD check runs (pedrobtz/r-actions#68;
-  # zutempo deferred the job the same way). Tracked as gap #4 in
-  # .agents/assurance.md.
+  sanitizers:
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:sanitizers'))
+    uses: pedrobtz/r-actions/.github/workflows/sanitizers.yml@v1
+    with:
+      asan: true
+      profile: auto
 
   valgrind:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.

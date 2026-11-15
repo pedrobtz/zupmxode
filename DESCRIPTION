@@ -13,6 +13,8 @@ Description: Simulates population pharmacokinetic and pharmacodynamic
     exponential, and the rest by 'LSODA' or Dormand-Prince; subjects are
     solved in parallel with 'OpenMP'.
 License: MIT + file LICENSE
+Imports: 
+    zumir
 Config/roxygen2/version: 8.1.1
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

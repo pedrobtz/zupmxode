@@ -18,7 +18,7 @@ is the one §4.7 describes.
 | --- | --- | --- | --- | --- | --- |
 | 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | [#21](https://github.com/pedrobtz/zupmxode/pull/21) | 2026-11-15 |
 | 1 | [Oracle corpus and baseline](#stage-1--oracle-corpus-and-baseline) | quick | [#3](https://github.com/pedrobtz/zupmxode/issues/3) | [#22](https://github.com/pedrobtz/zupmxode/pull/22) | 2026-11-15 |
-| 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | | |
+| 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | | 2026-11-15 |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | | |
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | | |
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | | |
@@ -184,6 +184,19 @@ built on it.
 - A full-profile run green on the pull request, and a dispatched step-20
   gctorture run green on its last commit.
 - `assurance.md` rows for the serialised IR and the model object filled.
+
+**Deviations, 2026-11-15.**
+
+- The fuzz harness's oracle is that an accepted IR, evaluated by the
+  reference evaluator with arrays of exactly its declared sizes, touches
+  nothing outside them (ASan), and evaluates the same twice; not "every
+  input it accepts lowers". Lowering needs zumir, which needs R, and the
+  harness builds without R. The R tests lower every hand-built IR.
+- The math table's oracle for finite arguments is Rmpfr at 200 bits
+  (`tools/make-math-reference.R`), not R's functions: R's `gamma()` and
+  `lgamma()` are the less accurate (design §4.1). R stays the oracle at
+  poles, infinities, NaN and zero.
+- `zumir` went into `Imports` (design D20).
 
 **Design.** [§4.1](design.md#41-parser-and-compiler-r),
 [§4.7](design.md#47-lowering-and-execution-tiers-c-through-zumir),
@@ -404,6 +417,8 @@ thread, on both tiers, with nothing allocated on the R heap.
 - On the interpreter tier, one MIR context per thread, compiled before
   the parallel region (zumir D10).
 - `pmx_ode_threads()`; the serial build where OpenMP is absent.
+- A re-entrant `lgamma` for the math table: the C library's writes its
+  sign to a global on some systems (`src/core/ir.c`).
 
 **Tests.**
 
