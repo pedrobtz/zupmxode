@@ -16,7 +16,7 @@ is the one §4.7 describes.
 
 | Stage | Title | CI | Issue | Pull request | Done |
 | --- | --- | --- | --- | --- | --- |
-| 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | | 2026-11-15 |
+| 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | [#21](https://github.com/pedrobtz/zupmxode/pull/21) | 2026-11-15 |
 | 1 | [Oracle corpus and baseline](#stage-1--oracle-corpus-and-baseline) | quick | [#3](https://github.com/pedrobtz/zupmxode/issues/3) | | |
 | 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | | |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | | |
