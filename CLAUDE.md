@@ -51,6 +51,11 @@ this package’s submission.
 - `make -C tests/c check`: the C core built and tested without R’s
   headers. Part of the default loop once a stage touches `src/core/`.
 - `bash tools/ci/platform.sh <os>`: every per-OS check, as CI runs it.
+- `Rscript tools/make-corpus.R`: regenerates the oracle fixtures (about
+  2 minutes; needs rxode2, mrgsolve and nlmixr2lib). Occasional: when
+  the corpus or an oracle changes.
+- `tools/run-benchmarks [engine]`: the §10 rows, appended to
+  `.agents/benchmarks.csv`; run alone on an idle machine.
 
 ## Architecture
 
@@ -83,9 +88,23 @@ section that decides it.
 
 ## Testing
 
-Conformance suite: none yet. The design’s oracle is rxode2 and mrgsolve
-on `zupmxio`’s corpus, `nlmixr2lib` and mrgsolve’s `modlib()` (§7, §9).
-Helpers: none yet. Runtime: none yet.
+Conformance suite: the oracle fixtures in
+`tests/testthat/fixtures/oracle/`, written by `tools/make-corpus.R`
+(design §7 says how). Regenerate them, never edit them; a new
+`disagreements.csv` row needs its note in `disagreements.md`, or
+`test-oracle-fixtures.R` fails.
+
+Helpers:
+
+- `helper-tables.R`: `expect_table_equal()` at the §6.3 tolerances,
+  through `dazdiff` when installed; `table_differences()` is the local
+  route, tested on its own.
+- `helper-oracle.R`: reads fixtures and solves with rxode2. The
+  generator sources it, so tests and fixtures solve the same way.
+
+The suite runs shuffled, top-level code included: build test data inside
+`test_that()` or in a helper, never at file level. Runtime: about 20 s
+locally, most of it rxode2 compiling three models.
 
 ## Continuous integration
 
