@@ -1,0 +1,3 @@
+# src/core/ holds the engine, which builds without R's headers
+# (tests/c/Makefile builds it alone); src/zupmxode.c is the R glue.
+OBJECTS = zupmxode.o core/core.o

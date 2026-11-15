@@ -16,7 +16,7 @@ is the one §4.7 describes.
 
 | Stage | Title | CI | Issue | Pull request | Done |
 | --- | --- | --- | --- | --- | --- |
-| 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | | |
+| 0 | [Package identity](#stage-0--package-identity) | quick | [#2](https://github.com/pedrobtz/zupmxode/issues/2) | [#21](https://github.com/pedrobtz/zupmxode/pull/21) | 2026-11-15 |
 | 1 | [Oracle corpus and baseline](#stage-1--oracle-corpus-and-baseline) | quick | [#3](https://github.com/pedrobtz/zupmxode/issues/3) | | |
 | 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | | |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | | |
@@ -81,6 +81,13 @@ runs under, and an assurance file that declares what it will owe.
 - The standalone C build runs in CI and fails when `src/core/` includes
   `R.h` (seen once).
 
+**Deviation, 2026-11-15.** The `sanitizers` job is not called yet: with
+no C that UBSan instruments, its instrumentation verifier fails before
+R CMD check runs
+([r-actions#68](https://github.com/pedrobtz/r-actions/issues/68)).
+Stage 2, the first real C, adds it; the assurance row is `gap #4` until
+then.
+
 **Design.** [§2](design.md#2-scope), [§3](design.md#3-position-in-the-zu-family).
 
 ## Stage 1 — Oracle corpus and baseline
@@ -144,6 +151,8 @@ built on it.
   `src/core/` that rejects malformed IR, and serialisation of the IR
   only (D18).
 - An internal R builder for hand-written IR, used by tests until Stage 3.
+- The `sanitizers` job in `native-checks.yaml`, deferred from Stage 0
+  (r-actions#68).
 - Lowering of each block to one MIR function through `zumir`'s API,
   the math table imported with `zumir_import()`; the model object owns
   its context and frees it in a finalizer.

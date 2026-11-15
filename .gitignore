@@ -52,3 +52,7 @@ CRAN-SUBMISSION
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# C tests built without R (tests/c/Makefile)
+tests/c/test_core
+tests/c/test_core.exe
