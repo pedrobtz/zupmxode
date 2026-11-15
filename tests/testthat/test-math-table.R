@@ -12,7 +12,11 @@ test_that("each function is within its error of the 200-bit value", {
     got <- .Call(zpx_math_r, ir_math[[f]], s$x,
                  if (ir_math[[f]] >= 32L) s$y else double())
     err <- ulps(got, s$ref)
-    expect_lte(max(err), math_ulps[[f]], label = paste(f, "ulps"))
+    i <- which.max(err)
+    expect_lte(max(err), math_ulps[[f]], label = sprintf(
+      "%s ulps (worst at x = %.17g, y = %.17g: %.17g, true %.17g)",
+      f, s$x[i], s$y[i], got[i], s$ref[i]
+    ))
   }
   # Every function of the table has reference values.
   expect_setequal(unique(r$f), setdiff(names(ir_math), c("min", "max")))

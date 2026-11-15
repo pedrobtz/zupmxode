@@ -20,11 +20,15 @@ test_that("a saved and restored model gives the same doubles", {
 
 test_that("a truncated IR is refused before anything is lowered", {
   ir <- hb_one_cpt()$ir
+  # Collected first and after, so a finalizer from an earlier test running
+  # in between cannot move the count.
+  gc()
   live <- .Call(zpx_live_models)
   for (n in c(0L, 1L, 20L, length(ir$code) - 1L)) {
     bad <- new_ir(ir$code[seq_len(n)], ir$consts)
     expect_error(new_model(bad), class = "pmx_ode_error_ir")
   }
+  gc()
   expect_identical(.Call(zpx_live_models), live)
 })
 

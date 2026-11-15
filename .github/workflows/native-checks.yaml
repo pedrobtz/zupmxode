@@ -47,6 +47,10 @@ jobs:
     uses: pedrobtz/r-actions/.github/workflows/valgrind.yml@v1
     with:
       profile: auto
+      suppressions: tools/valgrind.supp
+      # --smc-check=all: MIR writes code at run time, which memcheck must
+      # notice to run the new code rather than a stale translation.
+      valgrind-opts: "--leak-check=full --track-origins=yes --num-callers=30 --smc-check=all"
 
   lto:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.

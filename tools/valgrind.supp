@@ -1,0 +1,34 @@
+# Valgrind suppressions for valgrind.yaml (native-checks.yaml). Each one is
+# not zupmxode's, says whose it is, and is as narrow as the stack allows.
+
+# data.table, which rxode2 (Suggests) loads, starts OpenMP threads whose
+# thread-local storage is still allocated when R exits; memcheck counts it
+# as "possibly lost" (Stage 2's full run, PR #23). The stack runs through
+# libgomp from data_table.so, not zupmxode.so.
+{
+   datatable-gomp-thread-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   obj:*/libgomp.so*
+   ...
+   obj:*/data.table/libs/data_table.so
+}
+
+# testthat's progress reporting starts a thread in cli, with the same
+# thread-local storage at exit (seen in zumir's Stage 5 run).
+{
+   cli-ticker-thread-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   obj:*/cli/libs/cli.so
+}
