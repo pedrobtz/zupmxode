@@ -13,7 +13,7 @@ doses:
 
 ``` r
 
-ev <- zupmxode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
+ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
                       time = seq(0, 168, by = 1))
 ```
 
@@ -25,24 +25,23 @@ milliseconds, without a compiler.
 
 ``` r
 
-# Open: Q6, should the R functions be pmx_ode_*() rather than zupmxode_*()?
-m <- zupmxode_model({
+m <- pmx_ode_model({
   ka <- exp(tka + eta.ka); cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v)
   d/dt(depot)   <- -ka * depot
   d/dt(central) <-  ka * depot - cl / v * central
   cp <- central / v
 })
-zupmxode_info(m)
+pmx_ode_info(m)
 ```
 
 ## Solve one subject
 
-`zupmxode_solve()` is the deterministic core: parameters in, predictions
+`pmx_ode_solve()` is the deterministic core: parameters in, predictions
 out, with no random draws.
 
 ``` r
 
-out <- zupmxode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
+out <- pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
                                         eta.ka = 0, eta.cl = 0,
                                         eta.v = 0))
 ```
@@ -55,9 +54,9 @@ seed gives the same result at any thread count.
 
 ``` r
 
-zupmxode_threads(8)
+pmx_ode_threads(8)
 set.seed(1)
-sim <- zupmxode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
+sim <- pmx_ode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
                     omega = diag(c(0.1, 0.1, 0.1)),
                     sigma = list(cp = prop(0.1)), n = 1000)
 ```
@@ -66,13 +65,13 @@ sim <- zupmxode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
 
 The solver is the most specific one the model allows (closed form,
 matrix exponential, or a general ODE solver), and the tier is native
-code unless the platform cannot run it. `zupmxode_info()` says which was
+code unless the platform cannot run it. `pmx_ode_info()` says which was
 chosen, and both can be overridden.
 
 ``` r
 
-zupmxode_method(m, "lsoda")
-zupmxode_tier(m, "interp")
+pmx_ode_method(m, "lsoda")
+pmx_ode_tier(m, "interp")
 ```
 
 ## Where next

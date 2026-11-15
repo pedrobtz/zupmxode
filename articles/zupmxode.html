@@ -69,7 +69,7 @@ same models with nothing but R. This page compiles a one-compartment
 model with first-order absorption, and gives it a week of daily 100 mg
 doses:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu">zupmxode_events</span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
+<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_events</span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
 <span>                      time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">168</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="compile-a-model">Compile a model<a class="anchor" aria-label="anchor" href="#compile-a-model"></a>
@@ -78,22 +78,21 @@ doses:</p>
 so existing rxode2 models run unchanged. It is compiled to native code
 in milliseconds, without a compiler.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Open: Q6, should the R functions be pmx_ode_*() rather than zupmxode_*()?</span></span>
-<span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">zupmxode_model</span><span class="op">(</span><span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_model</span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">ka</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tka</span> <span class="op">+</span> <span class="va">eta.ka</span><span class="op">)</span>; <span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tcl</span> <span class="op">+</span> <span class="va">eta.cl</span><span class="op">)</span>; <span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tv</span> <span class="op">+</span> <span class="va">eta.v</span><span class="op">)</span></span>
 <span>  <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">depot</span><span class="op">)</span>   <span class="op">&lt;-</span> <span class="op">-</span><span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span></span>
 <span>  <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">central</span><span class="op">)</span> <span class="op">&lt;-</span>  <span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span> <span class="op">-</span> <span class="va">cl</span> <span class="op">/</span> <span class="va">v</span> <span class="op">*</span> <span class="va">central</span></span>
 <span>  <span class="va">cp</span> <span class="op">&lt;-</span> <span class="va">central</span> <span class="op">/</span> <span class="va">v</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="fu">zupmxode_info</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">pmx_ode_info</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="solve-one-subject">Solve one subject<a class="anchor" aria-label="anchor" href="#solve-one-subject"></a>
 </h2>
-<p><code>zupmxode_solve()</code> is the deterministic core: parameters
+<p><code>pmx_ode_solve()</code> is the deterministic core: parameters
 in, predictions out, with no random draws.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">zupmxode_solve</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
+<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_solve</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                                        eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -104,9 +103,9 @@ in, predictions out, with no random draws.</p>
 R’s random number generator, and the C engine stays deterministic. The
 same seed gives the same result at any thread count.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">zupmxode_threads</span><span class="op">(</span><span class="fl">8</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu">pmx_ode_threads</span><span class="op">(</span><span class="fl">8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu">zupmxode_sim</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_sim</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
 <span>                    omega <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                    sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cp <span class="op">=</span> <span class="fu">prop</span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>, n <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -115,11 +114,11 @@ same seed gives the same result at any thread count.</p>
 </h2>
 <p>The solver is the most specific one the model allows (closed form,
 matrix exponential, or a general ODE solver), and the tier is native
-code unless the platform cannot run it. <code>zupmxode_info()</code>
-says which was chosen, and both can be overridden.</p>
+code unless the platform cannot run it. <code>pmx_ode_info()</code> says
+which was chosen, and both can be overridden.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">zupmxode_method</span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span></span>
-<span><span class="fu">zupmxode_tier</span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">pmx_ode_method</span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span></span>
+<span><span class="fu">pmx_ode_tier</span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="where-next">Where next<a class="anchor" aria-label="anchor" href="#where-next"></a>
