@@ -20,6 +20,7 @@
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pedrobtz/zupmxode/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -29,7 +30,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>CLAUDE.md</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/pedrobtz/zupmxode/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
 <div id="claudemd" class="section level1">
@@ -48,7 +49,7 @@
 </div>
 <div class="section level2">
 <h2 id="current-state">Current state<a class="anchor" aria-label="anchor" href="#current-state"></a></h2>
-<p>Scaffolded 2026-11-15 with <code>create-pkg.sh</code> (C via <code>use_c()</code>); no functionality yet. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0. <code>DESCRIPTION</code>’s <code>Title</code>, <code>Description</code> and <code>Authors@R</code> are still the scaffold placeholders.</p>
+<p>Stage 0 (package identity and CI) done 2026-11-15; no engine functionality yet. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0.</p>
 </div>
 <div class="section level2">
 <h2 id="versions-and-dependents">Versions and dependents<a class="anchor" aria-label="anchor" href="#versions-and-dependents"></a></h2>
@@ -56,11 +57,14 @@
 </div>
 <div class="section level2">
 <h2 id="commands">Commands<a class="anchor" aria-label="anchor" href="#commands"></a></h2>
-<p>Only the shared commands so far.</p>
-</div>
+<ul><li>
+<code>make -C tests/c check</code>: the C core built and tested without R’s headers. Part of the default loop once a stage touches <code>src/core/</code>.</li>
+<li>
+<code>bash tools/ci/platform.sh &lt;os&gt;</code>: every per-OS check, as CI runs it.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
-<p>To be written as stages land; see <code>.agents/design.md</code> §4. The scaffold set up a C layer (<code>src/zupmxode.c</code>, registered through <code>useDynLib</code>).</p>
+<p>To be written as stages land; see <code>.agents/design.md</code> §4. The engine is C in <code>src/core/</code>, which never includes R’s headers, so the C tests, fuzz harnesses and mutation runs build it alone; <code>src/zupmxode.c</code> is the only R glue and registers the <code>.Call</code> entry points.</p>
 </div>
 <div class="section level2">
 <h2 id="invariants-that-are-easy-to-break">Invariants that are easy to break<a class="anchor" aria-label="anchor" href="#invariants-that-are-easy-to-break"></a></h2>
@@ -77,7 +81,8 @@
 </div>
 <div class="section level2">
 <h2 id="continuous-integration">Continuous integration<a class="anchor" aria-label="anchor" href="#continuous-integration"></a></h2>
-<p><code>R-CMD-check.yaml</code> and <code>coverage.yaml</code> call the shared r-actions workflows (<code>r-cmd-check.yml@v1</code>, <code>coverage.yml@v1</code>); <code>pkgdown.yaml</code> builds and deploys the site. Stage 9 of the design’s roadmap is marked <code>full</code>.</p>
+<p>Shared r-actions workflows, called from <code>.github/workflows/</code>: <code>R-CMD-check.yaml</code> (with the Windows R-devel row), <code>native-checks.yaml</code> (valgrind, LTO, rchk, analyzers, cran-special; sanitizers from Stage 2, r-actions#68), <code>gctorture.yaml</code> (wide step on pull requests, step 20 daily and on dispatch), <code>coverage.yaml</code> (<code>native: true</code>), <code>assurance.yaml</code> and <code>platforms.yaml</code>. <code>pkgdown.yaml</code> builds and deploys the site.</p>
+<p><code>platforms.yaml</code> runs <code>tools/ci/platform.sh</code>: today the C core built and tested without R (<code>make -C tests/c</code>), Ubuntu only until Stage 2 adds macOS and Windows. Dispatch step-20 gctorture on the branch (<code>gh workflow run gctorture.yml --ref &lt;branch&gt;</code>) before merging a change to <code>PROTECT</code>s, finalizers or external pointers. The roadmap’s <code>full</code> stages are 2, 6, 8 and the three closing ones.</p>
 </div>
 <div class="section level2">
 <h2 id="vendored-native-code">Vendored native code<a class="anchor" aria-label="anchor" href="#vendored-native-code"></a></h2>
@@ -90,7 +95,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by First Last.</p>
+  <p>Developed by Pedro Baltazar.</p>
 </div>
 
 <div class="pkgdown-footer-right">

@@ -2,16 +2,20 @@
 
 ## Authors
 
-- **First Last**. Author, maintainer.
+- **Pedro Baltazar**. Author, maintainer, copyright holder.
 
 ## Citation
 
-Last F (2026). *zupmxode: What the Package Does (One Line, Title Case)*.
-R package version 0.0.0.9000, <https://pedrobtz.github.io/zupmxode/>.
+Source:
+[`DESCRIPTION`](https://github.com/pedrobtz/zupmxode/blob/main/DESCRIPTION)
+
+Baltazar P (2026). *zupmxode: Population Pharmacokinetic and
+Pharmacodynamic Simulation Without a Compiler*. R package version
+0.0.0.9000, <https://pedrobtz.github.io/zupmxode/>.
 
     @Manual{,
-      title = {zupmxode: What the Package Does (One Line, Title Case)},
-      author = {First Last},
+      title = {zupmxode: Population Pharmacokinetic and Pharmacodynamic Simulation Without a Compiler},
+      author = {Pedro Baltazar},
       year = {2026},
       note = {R package version 0.0.0.9000},
       url = {https://pedrobtz.github.io/zupmxode/},
