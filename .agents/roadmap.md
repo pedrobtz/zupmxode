@@ -142,12 +142,12 @@ built on it.
 
 - The IR (§4.1): integer vector plus constant pool, a verifier in
   `src/core/` that rejects malformed IR, and serialisation of the IR
-  only (Q7).
+  only (D18).
 - An internal R builder for hand-written IR, used by tests until Stage 3.
 - Lowering of each block to one MIR function through `zumir`'s API,
   the math table imported with `zumir_import()`; the model object owns
   its context and frees it in a finalizer.
-- `zupmxode_tier()`; on the interpreter tier, one context per thread
+- `pmx_ode_tier()`; on the interpreter tier, one context per thread
   (zumir D10) is left to Stage 8, which owns threads.
 - Where `zumir_tier()` is `"none"`, a classed error naming it (D15).
 - Fuzz harness over the IR verifier, built from `src/core/` without R,
@@ -192,7 +192,7 @@ classified, folded and hoisted, and runs on both tiers.
 
 **Work.**
 
-- `zupmxode_model()`: the walker over R's parse, name resolution, the
+- `pmx_ode_model()`: the walker over R's parse, name resolution, the
   classifier (closed-form, linear, general).
 - Constant folding, common subexpressions, dead code, `ivl` hoisting;
   each can be switched off internally.
@@ -209,7 +209,7 @@ classified, folded and hoisted, and runs on both tiers.
   `test-classify.R`.
 - Optimisations: every corpus model gives identical block output with
   folding, CSE and hoisting each switched off, in `test-optimise.R`.
-- Subset promise: every model `zupmxode_model()` accepts also compiles
+- Subset promise: every model `pmx_ode_model()` accepts also compiles
   under rxode2, when installed, in `test-language.R`.
 
 **Exit criteria.**
@@ -232,7 +232,7 @@ semantics, checked rule by rule before any solver uses them.
 
 **Work.**
 
-- `zupmxode_events()` and validation of NONMEM-style columns, errors
+- `pmx_ode_events()` and validation of NONMEM-style columns, errors
   naming the row and the rule (§8).
 - The scheduler in `src/core/`: dose starts, infusion ends, lags,
   `II`/`ADDL` expansion, `SS` 1 and 2, `EVID` 0–4, `RATE` −1 and −2,
@@ -267,12 +267,12 @@ semantics, checked rule by rule before any solver uses them.
 
 **CI.** `quick`.
 
-**Goal.** `zupmxode_solve()` returns predictions for closed-form models,
+**Goal.** `pmx_ode_solve()` returns predictions for closed-form models,
 matching both oracles, with exact sums.
 
 **Work.**
 
-- `zupmxode_solve()` for one or more subjects, single-threaded.
+- `pmx_ode_solve()` for one or more subjects, single-threaded.
 - One-, two- and three-compartment closed forms with bolus, zero- and
   first-order input, in the three parameterisations; superposition and
   steady state through a `zuexact` accumulator.
@@ -358,7 +358,7 @@ most specific solver, and the user can see and override the choice.
 - Padé with scaling and squaring, recomputed on parameter or covariate
   change, with the constant-infusion particular solution; the state
   limit (about 20, fixed here) above which the classifier falls back.
-- Automatic selection; `zupmxode_method()`; `zupmxode_info()` with
+- Automatic selection; `pmx_ode_method()`; `pmx_ode_info()` with
   states, parameters, solver, tier and lowering time.
 
 **Tests.**
@@ -369,7 +369,7 @@ most specific solver, and the user can see and override the choice.
 - State limit: a linear model at the limit uses the matrix exponential,
   one state above it falls back to general, in `test-expm.R`.
 - Selection: each class gets its documented solver, and `method=`
-  overrides it, as `zupmxode_info()` reports, in `test-select.R`.
+  overrides it, as `pmx_ode_info()` reports, in `test-select.R`.
 
 **Exit criteria.**
 
@@ -394,7 +394,7 @@ thread, on both tiers, with nothing allocated on the R heap.
   threads, interrupts checked between subjects on the main thread.
 - On the interpreter tier, one MIR context per thread, compiled before
   the parallel region (zumir D10).
-- `zupmxode_threads()`; the serial build where OpenMP is absent.
+- `pmx_ode_threads()`; the serial build where OpenMP is absent.
 
 **Tests.**
 
@@ -420,25 +420,25 @@ thread, on both tiers, with nothing allocated on the R heap.
 
 **CI.** `quick`.
 
-**Goal.** `zupmxode_sim()` simulates a population reproducibly from
+**Goal.** `pmx_ode_sim()` simulates a population reproducibly from
 `set.seed()`, and NONMEM-style data frames run as events.
 
 **Work.**
 
-- `zupmxode_sim()`: etas from omega and residual error drawn in R; the
-  four error models (Q2), `prop()` and its siblings.
-- `zupmxode_solve()` on a NONMEM-style data frame.
+- `pmx_ode_sim()`: etas from omega and residual error drawn in R; the
+  four error models (D19), `prop()` and its siblings.
+- `pmx_ode_solve()` on a NONMEM-style data frame.
 
 **Tests.**
 
 - Reproducibility: the same seed gives identical results at 1 and 8
   threads, in `test-sim.R`.
 - Error models: each of the four against its formula applied by hand to
-  `zupmxode_solve()` output with the same draws, in `test-sim.R`.
+  `pmx_ode_solve()` output with the same draws, in `test-sim.R`.
 - Etas: the sample covariance of 10⁴ subjects' etas within sampling
   error of omega, in `test-sim.R`.
 - NONMEM input: a corpus data set solved through the data frame and
-  through `zupmxode_events()` gives identical output, in
+  through `pmx_ode_events()` gives identical output, in
   `test-nonmem-data.R`.
 
 **Exit criteria.**
@@ -460,14 +460,15 @@ residual variances, from R or C, without allocation.
 
 **Work.**
 
-- `zupmxode_subjects()`, `zupmxode_subject_eval()` in R and C,
+- `pmx_ode_subjects()`, `pmx_ode_subject_eval()` in R and
+  `zupmxode_subject_eval()` in C,
   `zupmxode_arena_new()`, the versioned options struct, status codes.
 - `inst/include/zupmxode.h`, exported through `R_RegisterCCallable`.
 
 **Tests.**
 
-- Every corpus model: `zupmxode_subject_eval()` predictions identical to
-  `zupmxode_solve()`'s, and `var` equal to the error model's formula, in
+- Every corpus model: `pmx_ode_subject_eval()` predictions identical to
+  `pmx_ode_solve()`'s, and `var` equal to the error model's formula, in
   `test-subject-eval.R`.
 - The same call from 8 threads on different subjects of one model gives
   the serial results, through a C test caller, in `test-subject-eval.R`.
@@ -622,11 +623,5 @@ review and a CRAN review.
 
 ## Blocking open questions
 
-- [Q6](design.md#15-open-questions) blocks Stage 2, the first stage that
-  exports a function: `zupmxode_*()` or `pmx_ode_*()`.
-- [Q7](design.md#15-open-questions) blocks Stage 2: serialise the IR only,
-  or MIR's binary too.
-- [Q2](design.md#15-open-questions) blocks Stage 9: the four error models
-  or more.
 - [Q4](design.md#15-open-questions) blocks Stage 14: CRAN or a GitHub
   release; this roadmap assumes CRAN.
