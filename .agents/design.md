@@ -228,7 +228,13 @@ at 200 bits, within a bound per function (half a unit in the last place
 for `sqrt`, a few for the rest), not to R's result: R's `gamma()` and
 `lgamma()` are further off than the C library's (by 228 units at
 `gamma(100.5)`). The sign of a zero result is C's, as rxode2's compiled
-code gives it. Comparisons follow C on NaN.
+code gives it. Comparisons follow C on NaN. Where a platform's C library is wrong,
+the table does not take it: `sqrt` is compiled into the package (mingw-w64's
+library rounds `sqrt(1 - 2^-53)` to 1), and `lgamma` is computed directly
+near zero and from 1e10 (mingw-w64's overflows at both). `sin`, `cos`
+and `tan` are held to the truth for |x| ≤ 1e5; beyond that they are the
+platform library's, unchecked: mingw-w64's reduces 1e300 wrongly, and no
+model reaches that range.
 
 ### 4.2 Event scheduler (C)
 

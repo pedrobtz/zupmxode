@@ -110,6 +110,7 @@ double zpx_probitinv(double x);
 double zpx_min(double a, double b);
 double zpx_max(double a, double b);
 double zpx_pow(double x, double y);
+double zpx_sqrt(double x);
 double zpx_gamma(double x);
 double zpx_lgamma(double x);
 

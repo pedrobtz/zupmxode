@@ -13,8 +13,8 @@ static const char *block_name[ZPX_IR_NBLOCKS] = {"zpx_pre", "zpx_ivl", "zpx_rhs"
 
 /* The math functions zumir cannot find in the C math library by name. */
 static int register_imports(zumir_ctx *z) {
-  static const int fns[] = {ZPX_FN_ABS,   ZPX_FN_GAMMA,  ZPX_FN_LGAMMA, ZPX_FN_LOGIT,
-                            ZPX_FN_EXPIT, ZPX_FN_PROBIT, ZPX_FN_PROBITINV};
+  static const int fns[] = {ZPX_FN_SQRT,  ZPX_FN_ABS,    ZPX_FN_GAMMA,     ZPX_FN_LGAMMA,
+                            ZPX_FN_LOGIT, ZPX_FN_EXPIT,  ZPX_FN_PROBIT,    ZPX_FN_PROBITINV};
   for (size_t i = 0; i < sizeof(fns) / sizeof(fns[0]); i++) {
     int st = zumir_import(z, zpx_math_name(fns[i]), (void *) zpx_math1(fns[i]));
     if (st != ZUMIR_OK) return st;

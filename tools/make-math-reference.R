@@ -66,6 +66,11 @@ for (f in names(ref1)) {
   x <- grid
   if (f %in% c("logit", "probit")) x <- x[x > 0 & x < 1]
   if (f %in% c("log", "sqrt")) x <- x[x >= 0]
+  # Trigonometric functions are held to the truth for |x| <= 1e5 only:
+  # beyond, they are the platform's C library's, and mingw-w64's reduces
+  # the argument wrongly (sin(1e300) is 0.979, not -0.818). No model
+  # reaches that range (design §4.1).
+  if (f %in% c("sin", "cos", "tan")) x <- x[abs(x) <= 1e5]
   ref <- if (f == "probit") {
     vapply(x, function(p) asNumeric(probit_ref(p)), 0)
   } else {

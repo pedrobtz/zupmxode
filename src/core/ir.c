@@ -122,6 +122,9 @@ double zpx_gamma(double x) {
  * which matters once blocks run on worker threads (roadmap Stage 8
  * replaces it with a re-entrant one). */
 double zpx_lgamma(double x) {
+  /* Near zero lgamma(x) is -log|x| to rounding (the next term is -0.577 x),
+   * and mingw-w64's lgamma() returns Inf at 2^-1074. */
+  if (x != 0.0 && fabs(x) < 1e-17) return -log(fabs(x));
   if (x >= 1e10 && isfinite(x)) {
     const double half_log_two_pi = 0.91893853320467274;
     double l = log(x);
@@ -132,13 +135,18 @@ double zpx_lgamma(double x) {
 
 static double fn_abs(double x) { return fabs(x); }
 
+/* sqrt() compiled here, where the compiler emits the hardware's correctly
+ * rounded square root, rather than taken from the C library by name:
+ * mingw-w64's library sqrt() returns 1 for 1 - 2^-53. */
+double zpx_sqrt(double x) { return sqrt(x); }
+
 static const struct {
   zpx_fn1 fn;
   const char *name;
 } math1[ZPX_FN_NFN1] = {
   [ZPX_FN_EXP] = {exp, "exp"},
   [ZPX_FN_LOG] = {log, "log"},
-  [ZPX_FN_SQRT] = {sqrt, "sqrt"},
+  [ZPX_FN_SQRT] = {zpx_sqrt, "zpx_sqrt"},
   [ZPX_FN_ABS] = {fn_abs, "zpx_abs"},
   [ZPX_FN_FLOOR] = {floor, "floor"},
   [ZPX_FN_CEILING] = {ceil, "ceil"},
