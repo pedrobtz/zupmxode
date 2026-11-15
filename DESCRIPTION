@@ -1,9 +1,17 @@
 Package: zupmxode
-Title: What the Package Does (One Line, Title Case)
+Title: Population Pharmacokinetic and Pharmacodynamic Simulation
+    Without a Compiler
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Pedro", "Baltazar", , "pedrobtz@gmail.com", role = c("aut", "cre", "cph"))
+Description: Simulates population pharmacokinetic and pharmacodynamic
+    models written in a subset of the 'rxode2' model language over
+    'NONMEM'-style event records, with no C compiler on the machine.
+    Models are parsed in R and compiled to native code through 'MIR', or
+    run by its interpreter where native code cannot be made. Closed-form
+    compartment models are solved exactly, linear systems by a matrix
+    exponential, and the rest by 'LSODA' or Dormand-Prince; subjects are
+    solved in parallel with 'OpenMP'.
 License: MIT + file LICENSE
 Config/roxygen2/version: 8.1.1
 Encoding: UTF-8
@@ -13,5 +21,12 @@ Suggests:
     rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
-URL: https://pedrobtz.github.io/zupmxode/
+URL: https://pedrobtz.github.io/zupmxode/,
+    https://github.com/pedrobtz/zupmxode
+BugReports: https://github.com/pedrobtz/zupmxode/issues
+LinkingTo: 
+    zumir,
+    zuexact
+Remotes: 
+    pedrobtz/zumir
 VignetteBuilder: knitr

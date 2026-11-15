@@ -32,28 +32,31 @@ spike fails.
 
 ## Current state
 
-Scaffolded 2026-11-15 with `create-pkg.sh` (C via `use_c()`); no
+Stage 0 (package identity and CI) done 2026-11-15; no engine
 functionality yet. The roadmap in `.agents/roadmap.md` takes it to v0.1.0.
-`DESCRIPTION`'s `Title`, `Description` and `Authors@R` are still the
-scaffold placeholders.
 
 ## Versions and dependents
 
 The current version's parent issue is
 [#1](https://github.com/pedrobtz/zupmxode/issues/1) for `v0.1.0`.
-Siblings that will depend on it: `zupmxfit` (RFC 0072, through `zupmxode_subject_eval()`) and
-`zupmxio` (RFC 0046, `Suggests` both ways). It will link to `zumir` and
+Siblings that will depend on it: `zupmxfit` (RFC 0072, through
+`zupmxode_subject_eval()`) and `zupmxio` (RFC 0046, `Suggests` both
+ways). It will link to `zumir` and
 `zuexact`; `zumir` is not on CRAN yet, so it comes through `Remotes:`
 until it is, and its release gates this package's submission.
 
 ## Commands
 
-Only the shared commands so far.
+- `make -C tests/c check`: the C core built and tested without R's
+  headers. Part of the default loop once a stage touches `src/core/`.
+- `bash tools/ci/platform.sh <os>`: every per-OS check, as CI runs it.
 
 ## Architecture
 
-To be written as stages land; see `.agents/design.md` §4. The scaffold set
-up a C layer (`src/zupmxode.c`, registered through `useDynLib`).
+To be written as stages land; see `.agents/design.md` §4. The engine is
+C in `src/core/`, which never includes R's headers, so the C tests, fuzz
+harnesses and mutation runs build it alone; `src/zupmxode.c` is the only
+R glue and registers the `.Call` entry points.
 
 ## Invariants that are easy to break
 
@@ -83,10 +86,19 @@ Helpers: none yet. Runtime: none yet.
 
 ## Continuous integration
 
-`R-CMD-check.yaml` and `coverage.yaml` call the shared r-actions
-workflows (`r-cmd-check.yml@v1`, `coverage.yml@v1`); `pkgdown.yaml`
-builds and deploys the site. Stage 9 of the design's roadmap is marked
-`full`.
+Shared r-actions workflows, called from `.github/workflows/`:
+`R-CMD-check.yaml` (with the Windows R-devel row), `native-checks.yaml`
+(sanitizers, valgrind, LTO, rchk, analyzers, cran-special),
+`gctorture.yaml` (wide step on pull requests, step 20 daily and on
+dispatch), `coverage.yaml` (`native: true`), `assurance.yaml` and
+`platforms.yaml`. `pkgdown.yaml` builds and deploys the site.
+
+`platforms.yaml` runs `tools/ci/platform.sh`: today the C core built and
+tested without R (`make -C tests/c`), Ubuntu only until Stage 2 adds
+macOS and Windows. Dispatch step-20 gctorture on the branch
+(`gh workflow run gctorture.yml --ref <branch>`) before merging a change
+to `PROTECT`s, finalizers or external pointers. The roadmap's `full`
+stages are 2, 6, 8 and the three closing ones.
 
 ## Vendored native code
 

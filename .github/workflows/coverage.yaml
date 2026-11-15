@@ -1,9 +1,11 @@
 on:
+  # `labeled`/`unlabeled` so that adding or removing a CI label reruns it.
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   # Weekly on main rather than on every push to it, and on demand; the
   # badge follows (README, "Pushes to main").
   schedule:
-    - cron: "29 2 * * 6"
+    - cron: "37 13 * * 0"
   workflow_dispatch:
 
 name: coverage
@@ -14,9 +16,19 @@ concurrency:
 
 jobs:
   coverage:
-    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@v1
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:coverage'))
+    # A write-token workflow: pinned to a commit (ci.md, Workflows).
+    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@d53e033699ab3fb2fa48a156156e2f142ff68fbc # v1.43.0
+    permissions:
+      contents: write
     with:
       badge-branch: gh-pages
       badge-path: badges/coverage.svg
-    permissions:
-      contents: write
+      # Lists the C functions no test enters and the conditions taken one way.
+      native: true

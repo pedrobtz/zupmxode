@@ -1,3 +1,3 @@
-# zupmxode (development version)
+# zupmxode 0.0.0.9000
 
 * Initial CRAN submission.
