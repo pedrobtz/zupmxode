@@ -16,7 +16,9 @@ bits <- 200
 grid <- c(0, 1, -1, 0.5, -0.5, 1e-300, -1e-300, 2.5, -2.5, 3, -3, 10, -10,
           170.5, 171.7, 1e10, -1e10, 1e300, .Machine$double.xmin, 1 - 2^-53,
           2^-1074, pi, 100.5, 7e-17, -37.5, 37.5, 1e-5, 0.999, 20.25, -20.25,
-          5.5, -0.001, 0.1, 0.9, 0.25, 0.75, 1e-10, 1 - 1e-10)
+          5.5, -0.001, 0.1, 0.9, 0.25, 0.75, 1e-10, 1 - 1e-10,
+          # either side of zpx_lgamma()'s switch to Stirling's series
+          9.999999e9, 1.000001e10)
 grid <- unique(grid)
 M <- function(x) mpfr(x, bits)
 
@@ -40,15 +42,23 @@ ref1 <- list(
   probitInv = function(X) pnorm(X)
 )
 
+# A double as the 16 hexadecimal digits of its IEEE bits, most significant
+# first; tests/testthat/helper-math.R reads them back.
+double_bits <- function(x) {
+  b <- matrix(writeBin(as.double(x), raw(), endian = "big"), nrow = 8)
+  apply(b, 2, function(col) paste(format(col), collapse = ""))
+}
+
 rows <- list()
 add <- function(f, x, y, ref) {
   keep <- is.finite(ref) & is.finite(x) & is.finite(y)
   if (any(keep)) {
     rows[[length(rows) + 1L]] <<- data.frame(
-      # 17 significant digits read back as the same double; R's reader
-      # takes hexadecimal subnormals as 0.
-      f = f, x = sprintf("%.17g", x[keep]), y = sprintf("%.17g", y[keep]),
-      ref = sprintf("%.17g", ref[keep])
+      # IEEE bit patterns: R's decimal reader is not exact where long
+      # double is double (macOS arm64), and it reads hexadecimal
+      # subnormals as 0, so neither text form round-trips everywhere.
+      f = f, x = double_bits(x[keep]), y = double_bits(y[keep]),
+      ref = double_bits(ref[keep])
     )
   }
 }

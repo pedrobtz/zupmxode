@@ -116,10 +116,19 @@ double zpx_gamma(double x) {
   return tgamma(x);
 }
 
-/* lgamma() through the C library. Its sign is written to a global on some
- * libraries, which matters once blocks run on worker threads (roadmap
- * Stage 8 replaces it with a re-entrant one). */
-double zpx_lgamma(double x) { return lgamma(x); }
+/* lgamma() through the C library, except for x >= 1e10, where Stirling's
+ * series is exact to rounding and mingw-w64's lgamma() overflows to Inf
+ * (at 1e300). The library's sign is written to a global on some systems,
+ * which matters once blocks run on worker threads (roadmap Stage 8
+ * replaces it with a re-entrant one). */
+double zpx_lgamma(double x) {
+  if (x >= 1e10 && isfinite(x)) {
+    const double half_log_two_pi = 0.91893853320467274;
+    double l = log(x);
+    return x * (l - 1.0) - 0.5 * l + half_log_two_pi + 1.0 / (12.0 * x);
+  }
+  return lgamma(x);
+}
 
 static double fn_abs(double x) { return fabs(x); }
 

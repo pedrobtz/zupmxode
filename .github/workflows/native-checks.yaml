@@ -67,6 +67,12 @@ jobs:
         || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
         || contains(github.event.pull_request.labels.*.name, 'skip-ci:rchk'))
     uses: pedrobtz/r-actions/.github/workflows/rchk.yml@v1
+    with:
+      fail-on-findings: true
+      # rchk installs dependencies from CRAN only; zumir is not there yet.
+      # Drop this once it is (roadmap Stage 14).
+      github-packages: |
+        pedrobtz/zumir
 
   analyzers:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.
