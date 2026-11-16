@@ -394,6 +394,11 @@ tolerances.
   solves them.
 - The SS cap test finds the fewest intervals that converge and checks
   either side of it, rather than a cap fixed in advance.
+- The full run found three things the quick one did not: liblsoda's
+  stray comma (a crash on its error path, ASan), its GNU variadic macros
+  (clang 23), and folded constants read back through R's decimal parser,
+  which is inexact under valgrind and on macOS arm64. All three are fixed
+  here; the last was the valgrind finding noted on #15.
 
 **Design.** [§4.3](design.md#43-solvers-c), [§6.3](design.md#63-numerics),
 [§8](design.md#8-errors), D5.

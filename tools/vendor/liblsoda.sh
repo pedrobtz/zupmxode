@@ -17,6 +17,17 @@
 #   7. solsy() returns 0 instead of calling abort() for a banded Jacobian,
 #      which liblsoda never builds (miter is always 2): CRAN forbids C that
 #      can end the R process.
+#   8. lsoda(): a stray comma in the message for a repeatedly failed error
+#      test made the rest of the string literal into arguments, so %g read
+#      a char * and the appended %s a double: a crash on that path (found by
+#      ASan in zupmxode's Stage 6).
+#   9. ERROR(), hardfailure() and softfailure() take their format in
+#      __VA_ARGS__, portable C99, not GNU's , ## __VA_ARGS__; the message's
+#      " @(file:line)" suffix goes with it.
+#  10. _strdup_printf() is declared with printf's format attribute, so the
+#      compiler checks every message against its arguments, and measures
+#      the length into a one-byte buffer rather than NULL (gcc's fortified
+#      headers warn of a null format there).
 #   3. _strdup_printf() allocates one byte more, for the string's NUL, and
 #      returns NULL when malloc() does: upstream truncated every message by
 #      a character and wrote through an unchecked pointer.
@@ -56,6 +67,14 @@ perl -0pi -e 's/idamax\(n, dx, incx\)\n\tdouble +\*dx;\n\tint +n, incx;\n/idamax
 # 5. Uninitialised reads in lsoda.c.
 perl -0pi -e 's/int             i=0, ihit;/int             i=0, ihit = 0;/' "$dest/lsoda.c"
 perl -0pi -e 's/(#define softfailure\(code, fmt,\.\.\.\) \\\n\{ \\\n)\tint             i; \\\n/$1\tint             i_; \\\n/; s/\tfor \(i = 1; i <= neq; i\+\+\) \\\n\t  y\[i\] = _C\(yh\)\[1\]\[i\];/\tfor (i_ = 1; i_ <= neq; i_++) \\\n\t  y[i_] = _C(yh)[1][i_];/' "$dest/lsoda.c"
+# 8. The stray comma.
+perl -0pi -e 's/(softfailure\(-4, "lsoda -- at t = %g and step size _C\(h\) = %g, the\\n"),\n/$1\n/' "$dest/lsoda.c"
+# 9. C99 variadic macros.
+perl -0pi -e 's/#define ERROR\(fmt, \.\.\.\) \(ctx->error\? free\(ctx->error\):\(void\)1, ctx->error=_strdup_printf\("EE:" fmt " @\(%s:%d\)", ## __VA_ARGS__, __FILE__, __LINE__\)\)/#define ERROR(...) (ctx->error? free(ctx->error):(void)1, ctx->error=_strdup_printf(__VA_ARGS__))/' "$dest/lsoda_internal.h"
+perl -0pi -e 's/#define hardfailure\(fmt,\.\.\.\) \\\n\{ \\\n\tERROR\(fmt, ## __VA_ARGS__\);/#define hardfailure(...) \\\n{ \\\n\tERROR(__VA_ARGS__);/; s/#define softfailure\(code, fmt,\.\.\.\) \\\n(\{ \\\n\tint             i_; \\\n\tint neq = ctx->neq; \\\n \\\n)\tERROR\(fmt, ## __VA_ARGS__\);/#define softfailure(code, ...) \\\n$1\tERROR(__VA_ARGS__);/' "$dest/lsoda.c"
+# 10. The format attribute, and no NULL buffer.
+perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\);/#if defined(__GNUC__)\nchar * _strdup_printf(const char * fmt, ...) __attribute__((format(printf, 1, 2)));\n#else\nchar * _strdup_printf(const char * fmt, ...);\n#endif/' "$dest/lsoda_internal.h"
+perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\) \{/char * _strdup_printf(const char * fmt, ...) {\n\tchar one[1];/; s/int s = vsnprintf\(NULL, 0, fmt, va\);/int s = vsnprintf(one, sizeof one, fmt, va);/' "$dest/strdup_printf.c"
 # 7. No abort() in solsy().
 perl -0pi -e 's/\t\tabort\(\);/\t\treturn 0;/' "$dest/solsy.c"
 # 6. (void) for empty parameter lists.

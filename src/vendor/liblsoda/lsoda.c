@@ -100,21 +100,21 @@ tam@wri.com
 */
 
 /* Terminate lsoda due to fatal errors*/
-#define hardfailure(fmt,...) \
+#define hardfailure(...) \
 { \
-	ERROR(fmt, ## __VA_ARGS__); \
+	ERROR(__VA_ARGS__); \
 	ctx->state = -3 ; \
 	return ctx->state; \
 }
 
 
 /* Terminate lsoda due to various error conditions. */
-#define softfailure(code, fmt,...) \
+#define softfailure(code, ...) \
 { \
 	int             i_; \
 	int neq = ctx->neq; \
  \
-	ERROR(fmt, ## __VA_ARGS__); \
+	ERROR(__VA_ARGS__); \
 	for (i_ = 1; i_ <= neq; i_++) \
 	  y[i_] = _C(yh)[1][i_];	   \
 	*t = _C(tn); \
@@ -865,7 +865,7 @@ int lsoda(struct lsoda_context_t * ctx, double *y, double *t, double tout) {
 					}
 				}
 				if (kflag == -1) {
-					softfailure(-4, "lsoda -- at t = %g and step size _C(h) = %g, the\n",
+					softfailure(-4, "lsoda -- at t = %g and step size _C(h) = %g, the\n"
 					"         error test failed repeatedly or\n"
 					"         with fabs(_C(h)) = hmin\n", _C(tn), _C(h));
 				}

@@ -171,7 +171,7 @@ stages are 2, 6, 8 and the three closing ones.
 in `src/vendor/liblsoda/`. `tools/vendor/liblsoda.sh` makes the tree from
 that commit and is the only place it is changed; `tools/vendor/verify`
 (the `vendor` workflow) rebuilds it and compares byte for byte. The
-patches, all in that script:
+patches, all in that script (8 to 10 found by Stage 6's full run):
 
 1. No console output: `printf`/`fprintf(stderr, …)` become `LSODA_LOG`,
    which does nothing (the messages are in `ctx->error`).
@@ -184,6 +184,12 @@ patches, all in that script:
 6. `(void)` for empty parameter lists.
 7. `solsy()` returns 0 rather than `abort()` for the banded Jacobian
    liblsoda never builds (CRAN: no C that can end R).
+8. A stray comma in `lsoda()`'s message for a repeatedly failed error test
+   made `%g` read a `char *` and `%s` a double: a crash on that path.
+9. `ERROR()`, `hardfailure()` and `softfailure()` are C99 variadic macros,
+   not GNU's `, ## __VA_ARGS__` (a significant warning under clang 23).
+10. `_strdup_printf()` has printf's format attribute, so the compiler
+    checks every message, and measures into a one-byte buffer, not NULL.
 
 To change the pin or a patch: edit the script or `manifest.tsv`, run
 `sh tools/vendor/liblsoda.sh`, regenerate `tools/vendor/checksums.sha256`

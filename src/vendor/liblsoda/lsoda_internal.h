@@ -11,8 +11,12 @@ void     cfode(struct lsoda_context_t * ctx, int meth);
 void     cfode_static(struct lsoda_context_t * ctx, int meth);
 void     scaleh(struct lsoda_context_t * ctx, double rh);
 
-char * _strdup_printf(char * fmt, ...);
+#if defined(__GNUC__)
+char * _strdup_printf(const char * fmt, ...) __attribute__((format(printf, 1, 2)));
+#else
+char * _strdup_printf(const char * fmt, ...);
+#endif
 #ifdef CFODE_STATIC
 	#define cfode cfode_static
 #endif
-#define ERROR(fmt, ...) (ctx->error? free(ctx->error):(void)1, ctx->error=_strdup_printf("EE:" fmt " @(%s:%d)", ## __VA_ARGS__, __FILE__, __LINE__))
+#define ERROR(...) (ctx->error? free(ctx->error):(void)1, ctx->error=_strdup_printf(__VA_ARGS__))

@@ -549,7 +549,8 @@ gen_block <- function(nodes, inputs, outputs, store_work = FALSE,
     key <- paste0("const:", sprintf("%a", v$const))
     if (cse && !is.null(memo[[key]])) return(memo[[key]])
     r <- newreg()
-    emit("const", r, sprintf("%.17g", v$const))
+    # The bits, not a decimal: see ir_number().
+    emit("const", r, ir_bits(v$const))
     if (cse) memo[[key]] <- r
     r
   }
