@@ -43,6 +43,8 @@
 <li><p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> solves models with no closed form, with LSODA (from the bundled liblsoda) or Dormand-Prince 5(4).</p></li>
 <li><p>Linear models are solved exactly between events by the matrix exponential.</p></li>
 <li><p><code><a href="../reference/pmx_ode_method.html">pmx_ode_method()</a></code> reports and sets a model’s solver; <code><a href="../reference/pmx_ode_info.html">pmx_ode_info()</a></code> says what a model is, which solver it takes and why, its tier and how long it took to compile.</p></li>
+<li><p>Subjects are solved in parallel with OpenMP; <code><a href="../reference/pmx_ode_threads.html">pmx_ode_threads()</a></code> sets how many threads, one by default. Results are the same, bit for bit, at any thread count.</p></li>
+<li><p><code><a href="../reference/pmx_ode_tier.html">pmx_ode_tier()</a></code> keeps a model’s compartments, outputs and solver when it makes the copy on another tier.</p></li>
 </ul></div>
   </main></div>
 

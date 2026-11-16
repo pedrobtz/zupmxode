@@ -70,23 +70,21 @@ See `.agents/design.md` §4 for the whole. Built so far:
   [`pmx_ode_events()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_events.md),
   the table’s checks and `sched_timeline()`, the tests’ view of a
   timeline.
-- `src/core/linear.[ch]`: the closed forms, the state carried exactly
-  between events through the eigenvalues, with a matrix exponential
-  where they meet (D21); `src/zpx_solve.c` walks a subject’s timeline
-  with it; `R/solve.R` is
-  [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md).
-- `src/core/dopri.[ch]`: Dormand-Prince 5(4) with dense output;
-  `zpx_solve_general()` in `src/zpx_solve.c` runs LSODA or it over the
-  timeline, with dense output across runs of observations, steady state
-  by repeated dosing, and a failure as NA from where it happened.
-- `src/core/expm.[ch]`: Padé 13 scaling and squaring;
-  `zpx_solve_linear()` probes A and c from rhs and steps the augmented
-  exponential. `R/method.R`:
+- `src/core/solve.[ch]`: one subject’s timeline walked with the closed
+  form (`src/core/linear.[ch]`, D21), the matrix exponential
+  (`src/core/expm.[ch]`, probing A and c from rhs), LSODA or
+  Dormand-Prince (`src/core/dopri.[ch]`, dense output across runs of
+  observations), steady state, and a failure as NA from where it
+  happened. No R headers: it runs on worker threads.
+- `src/zpx_solve.c`: the parallel runtime (design §4.4), every subject
+  split across OpenMP threads with per-thread arenas and, on the
+  interpreter tier, per-thread MIR contexts; `R/solve.R` is
+  [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md),
+  [`pmx_ode_threads()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_threads.md),
+  `auto_method()` (the selection) and `subject_method()` (a switched-off
+  compartment goes to LSODA). `R/method.R`:
   [`pmx_ode_method()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_method.md),
-  [`pmx_ode_info()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_info.md);
-  `auto_method()` in `R/solve.R` is the selection, and
-  `subject_method()` sends a subject with a switched-off compartment to
-  LSODA.
+  [`pmx_ode_info()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_info.md).
 - `src/zpx_lower.c`: IR to MIR, one module and one function per block,
   through `zumir`’s C API and emitter; `zumir_import()` registers the
   table’s functions the C library lacks.
@@ -166,10 +164,10 @@ locally, most of it rxode2 compiling three models.
 Shared r-actions workflows, called from `.github/workflows/`:
 `R-CMD-check.yaml` (with the Windows R-devel row), `native-checks.yaml`
 (valgrind, LTO, rchk, analyzers, cran-special; sanitizers from Stage 2,
-r-actions#68), `gctorture.yaml` (wide step on pull requests, step 20
-daily and on dispatch), `coverage.yaml` (`native: true`),
-`assurance.yaml` and `platforms.yaml`. `pkgdown.yaml` builds and deploys
-the site.
+r-actions#68; threadcheck from Stage 8, for C on OpenMP worker threads),
+`gctorture.yaml` (wide step on pull requests, step 20 daily and on
+dispatch), `coverage.yaml` (`native: true`), `assurance.yaml` and
+`platforms.yaml`. `pkgdown.yaml` builds and deploys the site.
 
 `platforms.yaml` runs `tools/ci/platform.sh`: today the C core built and
 tested without R (`make -C tests/c`), Ubuntu only until Stage 2 adds
