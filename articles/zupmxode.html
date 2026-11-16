@@ -96,10 +96,10 @@ in milliseconds, without a compiler.</p>
 <div class="section level2">
 <h2 id="solve-one-subject">Solve one subject<a class="anchor" aria-label="anchor" href="#solve-one-subject"></a>
 </h2>
-<p><code>pmx_ode_solve()</code> is the deterministic core: parameters
+<p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> is the deterministic core: parameters
 in, predictions out, with no random draws.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_solve</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
+<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_solve.html">pmx_ode_solve</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                                        eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>

@@ -53,7 +53,7 @@
 </div>
 <div class="section level2">
 <h2 id="versions-and-dependents">Versions and dependents<a class="anchor" aria-label="anchor" href="#versions-and-dependents"></a></h2>
-<p>The current version’s parent issue is <a href="https://github.com/pedrobtz/zupmxode/issues/1" class="external-link">#1</a> for <code>v0.1.0</code>. Siblings that will depend on it: <code>zupmxfit</code> (RFC 0072, through <code>zupmxode_subject_eval()</code>) and <code>zupmxio</code> (RFC 0046, <code>Suggests</code> both ways). It will link to <code>zumir</code> and <code>zuexact</code>; <code>zumir</code> is not on CRAN yet, so it comes through <code>Remotes:</code> until it is, and its release gates this package’s submission.</p>
+<p>The current version’s parent issue is <a href="https://github.com/pedrobtz/zupmxode/issues/1" class="external-link">#1</a> for <code>v0.1.0</code>. Siblings that will depend on it: <code>zupmxfit</code> (RFC 0072, through <code>zupmxode_subject_eval()</code>) and <code>zupmxio</code> (RFC 0046, <code>Suggests</code> both ways). It links to <code>zumir</code> only (zuexact left with design D21); <code>zumir</code> is not on CRAN yet, so it comes through <code>Remotes:</code> until it is, and its release gates this package’s submission.</p>
 </div>
 <div class="section level2">
 <h2 id="commands">Commands<a class="anchor" aria-label="anchor" href="#commands"></a></h2>
@@ -73,6 +73,8 @@
 <code>src/core/ir.[ch]</code>: the IR format, its verifier, a reference evaluator (the tests’ oracle and the fuzz harness’s, never an execution tier) and the math table. No R headers.</li>
 <li>
 <code>src/core/sched.[ch]</code>: the event scheduler, one subject’s records to a sorted timeline (design §6.2 has the rules); <code>src/zpx_sched.c</code> its <code>.Call</code>; <code>R/events.R</code> <code><a href="reference/pmx_ode_events.html">pmx_ode_events()</a></code>, the table’s checks and <code>sched_timeline()</code>, the tests’ view of a timeline.</li>
+<li>
+<code>src/core/linear.[ch]</code>: the closed forms, the state carried exactly between events through the eigenvalues, with a matrix exponential where they meet (D21); <code>src/zpx_solve.c</code> walks a subject’s timeline with it; <code>R/solve.R</code> is <code><a href="reference/pmx_ode_solve.html">pmx_ode_solve()</a></code>.</li>
 <li>
 <code>src/zpx_lower.c</code>: IR to MIR, one module and one function per block, through <code>zumir</code>’s C API and emitter; <code>zumir_import()</code> registers the table’s functions the C library lacks.</li>
 <li>

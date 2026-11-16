@@ -45,8 +45,9 @@ pmx_ode_info(m)
 
 ## Solve one subject
 
-`pmx_ode_solve()` is the deterministic core: parameters in, predictions
-out, with no random draws.
+[`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
+is the deterministic core: parameters in, predictions out, with no
+random draws.
 
 ``` r
 
