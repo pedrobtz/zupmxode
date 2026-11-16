@@ -61,3 +61,15 @@ test_that("parameters the model needs and the table does not carry are an error"
   expect_error(sched_timeline(sched_model(), two, sched_params()),
                class = "pmx_ode_error_argument")
 })
+
+test_that("the C entry refuses columns of the wrong type or length", {
+  d <- c(0, 1)
+  i <- c(0L, 0L)
+  args <- list(d, i, d, i, d, d, d, i, i, d, d, d, d, 2L)
+  expect_error(do.call(.Call, c(list(zpx_schedule_r), replace(args, 1, list(1:2)))),
+               "bad double column")
+  expect_error(do.call(.Call, c(list(zpx_schedule_r), replace(args, 2, list(c(0, 0))))),
+               "bad integer column")
+  expect_error(do.call(.Call, c(list(zpx_schedule_r), replace(args, 3, list(0)))),
+               "bad double column")
+})
