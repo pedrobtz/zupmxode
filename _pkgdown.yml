@@ -2,3 +2,9 @@ url: https://pedrobtz.github.io/zupmxode/
 template:
   bootstrap: 5
 
+
+articles:
+  - title: Concepts
+    navbar: ~
+    contents:
+      - articles/performance

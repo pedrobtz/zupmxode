@@ -36,6 +36,10 @@
   every draw made with R's random number generator, so `set.seed()` makes
   a simulation reproducible at any thread count.
 
+* The README says what the package is, and a Performance and platforms
+  article gives the benchmarks against rxode2 and mrgsolve and the tier
+  each platform runs.
+
 * `pmx_ode_subjects()` prepares subjects once and `pmx_ode_subject_eval()`
   evaluates one at a theta and eta, giving its predictions (the doubles
   `pmx_ode_solve()` gives) and residual variances, as an estimator needs.

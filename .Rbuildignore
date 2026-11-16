@@ -18,3 +18,4 @@
 ^tests/c$
 ^tools$
 ^tests/fuzz$
+^README\.Rmd$

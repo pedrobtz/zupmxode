@@ -1,6 +1,6 @@
 ---
 title: "Get started with zupmxode"
-description: "Compile a PK model, solve one subject, simulate a population, and pick the solver and tier."
+description: "Compile a PK model, solve one subject, simulate a population, evaluate a subject for an estimator, and pick the solver and tier."
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Get started with zupmxode}
@@ -16,21 +16,21 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(zupmxode)
 ```
 
-rxode2 and mrgsolve compile every model with the system C compiler, which
-locked-down and validated machines often lack. zupmxode runs the same
-models with nothing but R. This page compiles a one-compartment model
-with first-order absorption, and gives it a week of daily 100 mg doses:
-
-```{r}
-ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
-                      time = seq(0, 168, by = 1))
-```
+We take one model from text to a simulated population: compile it, give
+it a week of doses, solve it for one subject, simulate a hundred, and
+evaluate one subject the way an estimator does. By the end you will know
+the package's four objects (a model, an event table, a solution and a
+prepared subject) and the functions that make them. How fast this is, and
+where it runs, is left to the
+[Performance and platforms](https://pedrobtz.github.io/zupmxode/articles/performance.html)
+article.
 
 ## Compile a model
 
-The model is written in rxode2's syntax and read by R's own parser, so
-existing rxode2 models run unchanged. It is compiled to native code
-in milliseconds, without a compiler.
+A **model** is written in rxode2's syntax and read by R's own parser, so
+an rxode2 model in the supported subset runs unchanged. This one has a
+depot, a central compartment, and three parameters with a random effect
+each. Compiling it takes milliseconds and no C compiler.
 
 ```{r}
 m <- pmx_ode_model({
@@ -42,27 +42,51 @@ m <- pmx_ode_model({
 m
 ```
 
+`pmx_ode_info()` says what the compiler found: the compartments, the
+parameters, which solver the model takes and why, and its tier.
+
 ```{r}
 pmx_ode_info(m)
 ```
 
-## Solve one subject
+## Describe the doses
 
-`pmx_ode_solve()` is the deterministic core: parameters in, predictions
-out, with no random draws.
+An **event table** holds NONMEM-style records: doses, and the times to
+report. Here it is a week of daily 100 mg doses into the depot, observed
+every hour. A data frame with NONMEM's columns (`ID`, `TIME`, `AMT`,
+`CMT`, `EVID`, `MDV` and the rest) works the same way.
 
 ```{r}
-out <- pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
-                                        eta.ka = 0, eta.cl = 0,
-                                        eta.v = 0))
-head(out)
+ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
+                      time = seq(0, 168, by = 1))
+head(ev, 3)
+```
+
+## Solve one subject
+
+`pmx_ode_solve()` is the deterministic core: every parameter in, the
+compartments and outputs at each observation out, with no random draws.
+Look for `cp` rising after each dose and settling into a daily cycle.
+
+```{r}
+p <- c(tka = 0.5, tcl = 1, tv = 3, eta.ka = 0, eta.cl = 0, eta.v = 0)
+out <- pmx_ode_solve(m, ev, params = p)
+out[c(1, 2, 25, 26, 169), ]
+```
+
+The mistake new users make most is to leave a parameter out. The error
+names it rather than solving with a default:
+
+```{r, error = TRUE}
+pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3))
 ```
 
 ## Simulate a population, reproducibly
 
-Between-subject variability and residual error are drawn in R with R's
-random number generator, and the C engine stays deterministic. The same
-seed gives the same result at any thread count.
+`pmx_ode_sim()` draws each subject's etas from `omega` and adds residual
+error to the outputs `sigma` names. Every draw is made in R with R's
+random number generator, so the same seed gives the same result at any
+number of threads.
 
 ```{r}
 old <- pmx_ode_threads(2)
@@ -79,12 +103,33 @@ parameters named `eta...` in order. Residual error comes from `add()`,
 `prop()`, their sum `add() + prop()`, or `lnorm()`; the observation with
 error sits next to the prediction as `cp_obs`.
 
+## Evaluate one subject for an estimator
+
+An estimator tries thousands of parameter vectors on the same data. It
+prepares the subjects once with `pmx_ode_subjects()`, which splits the
+model's parameters into theta and eta, and then asks
+`pmx_ode_subject_eval()` for one **prepared subject's** predictions and
+residual variances at each vector.
+
+```{r}
+subs <- pmx_ode_subjects(m, ev)
+attr(subs, "eta")
+r <- pmx_ode_subject_eval(m, subs[[1]], theta = c(tka = 0.5, tcl = 1, tv = 3),
+                          eta = c(eta.ka = 0, eta.cl = 0.2, eta.v = 0),
+                          sigma = list(cp = prop(0.1)))
+head(cbind(time = r$time, pred = r$pred, var = r$var), 3)
+```
+
+The predictions are the doubles `pmx_ode_solve()` gives for the same
+parameters. The same call exists in C, for estimators written there,
+through the header `inst/include/zupmxode.h`.
+
 ## Choose the solver and the tier
 
 The solver is the most specific one the model allows (closed form, matrix
 exponential, or a general ODE solver), and the tier is native code unless
-the platform cannot run it. `pmx_ode_info()` says which was chosen, and
-both can be overridden.
+the platform cannot run it. Both can be overridden; each override returns
+a new model and leaves `m` as it was.
 
 ```{r}
 pmx_ode_method(pmx_ode_method(m, "lsoda"))
@@ -93,5 +138,10 @@ pmx_ode_tier(pmx_ode_tier(m, "interp"))
 
 ## Where next
 
-Every function is listed in the
-[reference](https://pedrobtz.github.io/zupmxode/reference/index.html).
+- [Performance and platforms](https://pedrobtz.github.io/zupmxode/articles/performance.html):
+  how these calls compare with rxode2 and mrgsolve, and which tier runs
+  where.
+- `?pmx_ode_model`: the subset of rxode2's language a model may use.
+- `?pmx_ode_events`: every column of an event table and how it is read.
+- The [reference](https://pedrobtz.github.io/zupmxode/reference/index.html)
+  lists every function.

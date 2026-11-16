@@ -27,7 +27,7 @@ is the one §4.7 describes.
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | [#29](https://github.com/pedrobtz/zupmxode/pull/29) | 2026-11-16 |
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | [#32](https://github.com/pedrobtz/zupmxode/pull/32) | 2026-11-16 |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | [#33](https://github.com/pedrobtz/zupmxode/pull/33) | 2026-11-16 |
-| 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | | |
+| 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | [#38](https://github.com/pedrobtz/zupmxode/pull/38) | 2026-11-16 |
 | 12 | [Assurance](#stage-12--assurance) | quick | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | | |
 | 13 | [Full CI](#stage-13--full-ci) | full | [#15](https://github.com/pedrobtz/zupmxode/issues/15) | | |
 | 14 | [v0.1.0 readiness](#stage-14--v010-readiness) | full | [#16](https://github.com/pedrobtz/zupmxode/issues/16) | | |
@@ -599,6 +599,13 @@ show the package as it runs.
 
 - The compile-time and candidate-loop rows of §10 are met.
 - R CMD check passes with the vignette evaluated.
+
+**Done (2026-11-16).** Compile 11 ms against rxode2's 0.95 s; 200
+candidates 2.6 s against 198 s. The two-compartment ODE row is recorded
+unmet (1.9x rxode2 with the matrix exponential, 3.3x with LSODA; #34).
+The README's tier for each leg is held by `test-platform-tier.R`, which
+asserts both tiers on every R-CMD-check leg: the quick run shows Ubuntu,
+and Stage 13's full run the rest.
 
 **Design.** [§10](design.md#10-performance-targets),
 [§12](design.md#12-acceptance-criteria-for-v010).
