@@ -1,7 +1,7 @@
-# Coverage-guided fuzzing of the IR verifier (tests/fuzz/fuzz_ir_verify.c),
-# built from src/core/ without R. The harness's oracle is more than "no
-# crash": an accepted IR is evaluated with arrays of exactly its declared
-# sizes, under ASan. 30 seconds on a pull request, 30 minutes weekly.
+# Coverage-guided fuzzing of the IR verifier (tests/fuzz/fuzz_ir_verify.c)
+# and the event scheduler (tests/fuzz/fuzz_scheduler.c), built from
+# src/core/ without R. Each harness's oracle is more than "no crash" (see
+# its header). 30 seconds on a pull request, 30 minutes weekly.
 on:
   # `labeled`/`unlabeled` so that adding or removing a CI label reruns it.
   pull_request:
@@ -39,6 +39,26 @@ jobs:
       # The corpus reached 92.1% of ir.c's lines in Stage 2's 30-second run;
       # a little under, so a harness change that stops reaching code fails.
       reach-floor: 88
+
+  fuzz-scheduler:
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:fuzz'))
+    uses: pedrobtz/r-actions/.github/workflows/fuzz.yml@v1
+    with:
+      harness: tests/fuzz/fuzz_scheduler.c
+      sources: src/core/sched.c
+      cflags: -Isrc/core
+      seed-corpus: tests/fuzz/corpus-scheduler
+      profile: auto
+      max-total-time: 1800
+      # The seeds alone reach 83.8% of sched.c's lines (Stage 4, gcov);
+      # fuzzing only adds to that.
+      reach-floor: 75
 
   report:
     needs: fuzz

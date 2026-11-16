@@ -68,7 +68,8 @@ One row per boundary the package crosses. An oracle knows the answer:
 | math table                       | Rmpfr at 200 bits for finite arguments                         | tests/testthat/test-math-table.R |
 | math table                       | R's own functions at poles, infinities, NaN and zero           | tests/testthat/test-math-table.R |
 | rxode2 model language subset     | R's value of each construct; rxode2 compiles what we accept    | tests/testthat/test-language.R |
-| PREDPP event semantics           | hand-computed timelines, rule by rule                          | gap #6     |
+| PREDPP event semantics           | hand-computed timelines, rule by rule                          | tests/testthat/test-events-rules.R |
+| PREDPP event semantics           | the timeline sorted, every dose expanded, every infusion ended | tests/fuzz/fuzz_scheduler.c |
 | PREDPP event semantics           | rxode2 and mrgsolve on the same events (three-engine record)   | gap #7     |
 | closed-form solutions            | rxode2 `linCmt()` and mrgsolve `PKMODEL`                       | gap #7     |
 | LSODA and Dormand–Prince         | rxode2 and mrgsolve; closed form on linear models              | gap #8     |
@@ -104,3 +105,4 @@ One row per limit the package enforces. "Straddled by" is the test of
 | IR registers per block        | registers  | tests/testthat/test-ir-verify.R |
 | IR states, parameters, work and outputs | slots | tests/testthat/test-ir-verify.R |
 | IR constants                  | constants  | tests/testthat/test-ir-verify.R |
+| timeline entries per subject  | entries    | tests/testthat/test-events-rules.R |

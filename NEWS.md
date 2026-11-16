@@ -7,3 +7,6 @@
 
 * `pmx_ode_model()` compiles a model written in the subset of rxode2's
   model language described in its documentation, including `linCmt()`.
+
+* `pmx_ode_events()` builds a NONMEM-style event table of doses and
+  observation times.
