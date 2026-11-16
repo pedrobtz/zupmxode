@@ -2,7 +2,7 @@
 # pmx_ode_events() or given as a data frame, checked, and scheduled by the
 # C scheduler (src/core/sched.c) into one subject's timeline.
 
-event_columns <- c("ID", "TIME", "EVID", "AMT", "CMT", "RATE", "DUR", "II",
+event_columns <- c("ID", "TIME", "EVID", "AMT", "CMT", "RATE", "DUR", "II", "MDV",
                    "ADDL", "SS")
 
 #' Build an event table
@@ -86,7 +86,14 @@ as_records <- function(events, model) {
     x
   }
   amt <- num("AMT", 0)
-  evid <- if ("EVID" %in% names(d)) num("EVID", 0) else ifelse(amt > 0, 1, 0)
+  # With no EVID, NONMEM's reading: a dose where there is an amount, else
+  # an observation, unless MDV says the record is not one (it then marks a
+  # time, EVID 2). Given EVID, MDV is not read.
+  evid <- if ("EVID" %in% names(d)) {
+    num("EVID", 0)
+  } else {
+    ifelse(amt > 0, 1, ifelse(num("MDV", 0) != 0, 2, 0))
+  }
   cmt <- if ("CMT" %in% names(d)) d$CMT else rep(1L, n)
   if (is.factor(cmt)) cmt <- as.character(cmt)
   if (is.character(cmt)) {

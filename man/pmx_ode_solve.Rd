@@ -12,8 +12,11 @@ pmx_ode_solve(model, events, params = double())
 \item{events}{An event table: from \code{\link[=pmx_ode_events]{pmx_ode_events()}}, or a NONMEM-style
 data frame with columns \code{ID}, \code{TIME}, \code{EVID}, \code{AMT}, \code{CMT}, \code{RATE},
 \code{DUR}, \code{II}, \code{ADDL} and \code{SS} (any case; all but \code{TIME} optional).
+With no \code{EVID}, a record with an \code{AMT} above 0 is a dose, one with
+\code{MDV} 1 marks a time (\code{EVID} 2), and the rest are observations; given
+\code{EVID}, \code{MDV} is not read. \code{CMT} is a compartment's name or number.
 Columns named like a model parameter are covariates, each record
-carrying its value.}
+carrying its value; other columns, such as \code{DV}, are ignored.}
 
 \item{params}{The model's parameters, a named numeric vector. A
 covariate column of \code{events} takes the place of its parameter.}
