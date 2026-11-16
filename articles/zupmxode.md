@@ -44,7 +44,7 @@ pmx_ode_info(m)
 #> <pmx_ode_info>
 #>   class:        linear
 #>   solver:       expm (linear in its compartments, with coefficients constant between events (2 of at most 20 compartments))
-#>   tier:         native, lowered in 1.0 ms
+#>   tier:         native, lowered in 0.0 ms
 #>   compartments: depot, central
 #>   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v
 #>   outputs:      ka, cl, v, cp

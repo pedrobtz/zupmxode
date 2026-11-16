@@ -51,6 +51,16 @@
   [`set.seed()`](https://rdrr.io/r/base/Random.html) makes a simulation
   reproducible at any thread count.
 
+- [`pmx_ode_subjects()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subjects.md)
+  prepares subjects once and
+  [`pmx_ode_subject_eval()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subject_eval.md)
+  evaluates one at a theta and eta, giving its predictions (the doubles
+  [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
+  gives) and residual variances, as an estimator needs. The same call is
+  in C, `zupmxode_subject_eval()`, through the header
+  `inst/include/zupmxode.h`, re-entrant and allocation-free, for
+  packages that link to zupmxode.
+
 - [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
   reads NONMEM’s `MDV` when a table has no `EVID`: a record with no dose
   and `MDV` 1 marks a time rather than being an observation.

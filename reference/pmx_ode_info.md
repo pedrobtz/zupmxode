@@ -32,7 +32,7 @@ pmx_ode_info(m)
 #> <pmx_ode_info>
 #>   class:        closed-form
 #>   solver:       closed (a linCmt() model with no other derivative)
-#>   tier:         native, lowered in 1.0 ms
+#>   tier:         native, lowered in 0.0 ms
 #>   compartments: central
 #>   parameters:   tcl, tv
 #>   outputs:      cl, v, cp

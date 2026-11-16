@@ -43,6 +43,10 @@ library(zupmxode)
   : Simulate a population
 - [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
   : Solve a model for one or more subjects
+- [`pmx_ode_subject_eval()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subject_eval.md)
+  : Evaluate one prepared subject
+- [`pmx_ode_subjects()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subjects.md)
+  : Prepare subjects for repeated evaluation
 - [`pmx_ode_threads()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_threads.md)
   : The number of threads a solve uses
 - [`pmx_ode_tier()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_tier.md)

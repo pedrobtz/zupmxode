@@ -32,9 +32,9 @@ says what changes if the spike fails.
 
 ## Current state
 
-Stages 0 to 9 done (2026-11-16): models compile, solve and simulate
-populations; the C API (Stage 10) is next. The roadmap in
-`.agents/roadmap.md` takes it to v0.1.0.
+Stages 0 to 10 done (2026-11-16): models compile, solve and simulate
+populations, and estimators evaluate subjects through the C API. The
+roadmap in `.agents/roadmap.md` takes it to v0.1.0.
 
 ## Versions and dependents
 
@@ -101,6 +101,14 @@ See `.agents/design.md` §4 for the whole. Built so far:
   [`prop()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
   [`lnorm()`](https://pedrobtz.github.io/zupmxode/reference/add.md) and
   `add() + prop()` (D19).
+- `src/zpx_eval.[ch]`: the C API (design §4.6,
+  `inst/include/zupmxode.h`): prepared subjects, arenas and
+  `zupmxode_subject_eval()`, on any thread; `src/zpx_api.c` its R glue,
+  the registered `zupmxode_api` table and the tests’ C callers;
+  `R/subjects.R` is
+  [`pmx_ode_subjects()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subjects.md)
+  and
+  [`pmx_ode_subject_eval()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subject_eval.md).
 - `R/compile.R`: the compiler, R’s parse to IR text for the assembler:
   statements, names, `linCmt()`’s expansion, the classifier, and one
   generator for every block (DCE by statement, folding through the math

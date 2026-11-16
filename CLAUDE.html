@@ -49,7 +49,7 @@
 </div>
 <div class="section level2">
 <h2 id="current-state">Current state<a class="anchor" aria-label="anchor" href="#current-state"></a></h2>
-<p>Stages 0 to 9 done (2026-11-16): models compile, solve and simulate populations; the C API (Stage 10) is next. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0.</p>
+<p>Stages 0 to 10 done (2026-11-16): models compile, solve and simulate populations, and estimators evaluate subjects through the C API. The roadmap in <code>.agents/roadmap.md</code> takes it to v0.1.0.</p>
 </div>
 <div class="section level2">
 <h2 id="versions-and-dependents">Versions and dependents<a class="anchor" aria-label="anchor" href="#versions-and-dependents"></a></h2>
@@ -83,6 +83,8 @@
 <code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>
 <li>
 <code>R/sim.R</code>: <code><a href="reference/pmx_ode_sim.html">pmx_ode_sim()</a></code>, the etas and residual draws in R (D7) put on the table as covariate columns for one <code><a href="reference/pmx_ode_solve.html">pmx_ode_solve()</a></code>, and the error models <code><a href="reference/add.html">add()</a></code>, <code><a href="reference/add.html">prop()</a></code>, <code><a href="reference/add.html">lnorm()</a></code> and <code>add() + prop()</code> (D19).</li>
+<li>
+<code>src/zpx_eval.[ch]</code>: the C API (design §4.6, <code>inst/include/zupmxode.h</code>): prepared subjects, arenas and <code>zupmxode_subject_eval()</code>, on any thread; <code>src/zpx_api.c</code> its R glue, the registered <code>zupmxode_api</code> table and the tests’ C callers; <code>R/subjects.R</code> is <code><a href="reference/pmx_ode_subjects.html">pmx_ode_subjects()</a></code> and <code><a href="reference/pmx_ode_subject_eval.html">pmx_ode_subject_eval()</a></code>.</li>
 <li>
 <code>R/compile.R</code>: the compiler, R’s parse to IR text for the assembler: statements, names, <code>linCmt()</code>’s expansion, the classifier, and one generator for every block (DCE by statement, folding through the math table, CSE by value, <code>ivl</code> hoisting; <code>compile_model(opts =)</code> switches each off for the tests). <code>R/pmx_ode_model.R</code> is the export.</li>
 <li>
