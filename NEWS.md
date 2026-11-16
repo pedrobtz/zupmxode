@@ -30,3 +30,12 @@
 
 * `pmx_ode_tier()` keeps a model's compartments, outputs and solver when it
   makes the copy on another tier.
+
+* `pmx_ode_sim()` simulates a population: etas drawn from `omega`, and
+  residual error from `add()`, `prop()`, `add() + prop()` or `lnorm()`,
+  every draw made with R's random number generator, so `set.seed()` makes
+  a simulation reproducible at any thread count.
+
+* `pmx_ode_solve()` reads NONMEM's `MDV` when a table has no `EVID`: a
+  record with no dose and `MDV` 1 marks a time rather than being an
+  observation.

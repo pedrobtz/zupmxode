@@ -79,6 +79,9 @@ One row per boundary the package crosses. An oracle knows the answer:
 | matrix exponential               | LSODA at tight tolerance; closed form where one exists         | tests/testthat/test-expm.R |
 | parallel runtime                 | one thread, bit for bit, on every corpus case and both tiers   | tests/testthat/test-threads.R |
 | parallel runtime                 | R's allocations in a solve do not grow with its subjects       | tests/testthat/test-alloc.R |
+| NONMEM-style data frames        | the same records from `pmx_ode_events()`; NONMEM's reading of MDV, DV, case and numbered compartments | tests/testthat/test-nonmem-data.R |
+| population simulation draws     | `MASS::mvrnorm()` from the same seed; omega within sampling error over 10^4 subjects | tests/testthat/test-sim.R |
+| residual error models           | each formula applied by hand to `pmx_ode_solve()` with the same draws | tests/testthat/test-sim.R |
 | C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects               | gap #12    |
 <!-- markdownlint-enable MD013 -->
 
