@@ -67,7 +67,7 @@ One row per boundary the package crosses. An oracle knows the answer:
 | lowering to MIR, two tiers       | the reference evaluator, and R's arithmetic on the same inputs | tests/testthat/test-tiers.R |
 | math table                       | Rmpfr at 200 bits for finite arguments                         | tests/testthat/test-math-table.R |
 | math table                       | R's own functions at poles, infinities, NaN and zero           | tests/testthat/test-math-table.R |
-| rxode2 model language subset     | R's value of each construct; rxode2 compiles what we accept    | gap #5     |
+| rxode2 model language subset     | R's value of each construct; rxode2 compiles what we accept    | tests/testthat/test-language.R |
 | PREDPP event semantics           | hand-computed timelines, rule by rule                          | gap #6     |
 | PREDPP event semantics           | rxode2 and mrgsolve on the same events (three-engine record)   | gap #7     |
 | closed-form solutions            | rxode2 `linCmt()` and mrgsolve `PKMODEL`                       | gap #7     |

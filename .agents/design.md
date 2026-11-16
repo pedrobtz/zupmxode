@@ -414,6 +414,32 @@ table in §4.1, comparison and logical operators, `linCmt()`, and
 rxode2 feature it belongs to. Models that compile under `zupmxode`
 compile unchanged under rxode2; the reverse is not promised.
 
+Details decided when the compiler was built (2026-11-15, Stage 3):
+
+- **Spellings.** rxode2's `lag(x)` and `F(x)` are accepted for `alag(x)`
+  and `f(x)`, and its bounded `logit(x, low, high)` and
+  `expit(x, low, high)` as the one-argument functions rescaled; `**` is
+  `^`, as R parses it; `min()` and `max()` take two or more arguments;
+  `t` and `time` are the time, `pi`, `Inf`, `NaN`, `TRUE` and `FALSE`
+  constants. `ifelse()` is not accepted: `if`/`else` is the subset's form.
+- **Names.** Compartments are named by `cmt()`, then by `d/dt()` in order
+  of appearance, with `linCmt()`'s first. Every name assigned is a local
+  and an output; every name read and never assigned is a parameter, in
+  order of first use. A local read on a path that has not assigned it is
+  a compile error, rather than rxode2's value from an earlier call.
+- **`linCmt()`** becomes rxode2's compartments (`depot`, `central`,
+  `peripheral1`, `peripheral2`) and their equations, from the
+  parameterisations §4.3 names; the model is closed-form only when it has
+  no other derivative, and the general solvers solve the same equations.
+- **`pre`** holds lags, bioavailabilities, rates, durations and initial
+  amounts, which may depend on parameters and covariates but not on a
+  compartment or on time.
+- **Hoisting** takes a top-level assignment into `ivl` when it is the
+  only assignment to its name and reads no compartment and no time,
+  directly or through a local.
+- **Folding** evaluates a constant subexpression with the math table
+  itself, so a folded value is the double the generated code computes.
+
 ### 6.2 Events
 
 PREDPP semantics as documented in the NONMEM Users Guide, with rxode2's

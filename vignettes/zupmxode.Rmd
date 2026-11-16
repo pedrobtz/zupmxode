@@ -15,7 +15,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-```{r setup}
+```{r setup, eval = TRUE}
 library(zupmxode)
 ```
 
@@ -35,13 +35,17 @@ The model is written in rxode2's syntax and read by R's own parser, so
 existing rxode2 models run unchanged. It is compiled to native code
 in milliseconds, without a compiler.
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 m <- pmx_ode_model({
   ka <- exp(tka + eta.ka); cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v)
   d/dt(depot)   <- -ka * depot
   d/dt(central) <-  ka * depot - cl / v * central
   cp <- central / v
 })
+m
+```
+
+```{r, eval = FALSE}
 pmx_ode_info(m)
 ```
 

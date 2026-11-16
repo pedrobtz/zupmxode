@@ -36,6 +36,9 @@ jobs:
       seed-corpus: tests/fuzz/corpus
       profile: auto
       max-total-time: 1800
+      # The corpus reached 92.1% of ir.c's lines in Stage 2's 30-second run;
+      # a little under, so a harness change that stops reaching code fails.
+      reach-floor: 88
 
   report:
     needs: fuzz
