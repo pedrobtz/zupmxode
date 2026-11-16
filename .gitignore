@@ -58,3 +58,5 @@ tests/c/test_core
 tests/c/test_core.exe
 tests/c/test_lsoda
 tests/c/test_lsoda.exe
+tests/c/test_header
+tests/c/test_header.exe

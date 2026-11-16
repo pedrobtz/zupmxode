@@ -36,6 +36,13 @@
   every draw made with R's random number generator, so `set.seed()` makes
   a simulation reproducible at any thread count.
 
+* `pmx_ode_subjects()` prepares subjects once and `pmx_ode_subject_eval()`
+  evaluates one at a theta and eta, giving its predictions (the doubles
+  `pmx_ode_solve()` gives) and residual variances, as an estimator needs.
+  The same call is in C, `zupmxode_subject_eval()`, through the header
+  `inst/include/zupmxode.h`, re-entrant and allocation-free, for packages
+  that link to zupmxode.
+
 * `pmx_ode_solve()` reads NONMEM's `MDV` when a table has no `EVID`: a
   record with no dose and `MDV` 1 marks a time rather than being an
   observation.
