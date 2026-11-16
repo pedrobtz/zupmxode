@@ -32,8 +32,8 @@ spike fails.
 
 ## Current state
 
-Stages 0 to 9 done (2026-11-16): models compile, solve and simulate
-populations; the C API (Stage 10) is next. The roadmap in `.agents/roadmap.md` takes it to v0.1.0.
+Stages 0 to 10 done (2026-11-16): models compile, solve and simulate
+populations, and estimators evaluate subjects through the C API. The roadmap in `.agents/roadmap.md` takes it to v0.1.0.
 
 ## Versions and dependents
 
@@ -88,6 +88,11 @@ See `.agents/design.md` §4 for the whole. Built so far:
 - `R/sim.R`: `pmx_ode_sim()`, the etas and residual draws in R (D7) put
   on the table as covariate columns for one `pmx_ode_solve()`, and the
   error models `add()`, `prop()`, `lnorm()` and `add() + prop()` (D19).
+- `src/zpx_eval.[ch]`: the C API (design §4.6, `inst/include/zupmxode.h`):
+  prepared subjects, arenas and `zupmxode_subject_eval()`, on any
+  thread; `src/zpx_api.c` its R glue, the registered `zupmxode_api`
+  table and the tests' C callers; `R/subjects.R` is
+  `pmx_ode_subjects()` and `pmx_ode_subject_eval()`.
 - `R/compile.R`: the compiler, R's parse to IR text for the assembler:
   statements, names, `linCmt()`'s expansion, the classifier, and one
   generator for every block (DCE by statement, folding through the math

@@ -413,6 +413,41 @@ This costs little now and a rewrite later: the solvers already take
 their workspace from a per-thread arena (§4.4), so the entry point is a
 thin layer over the code `pmx_ode_solve()` runs.
 
+How it was built (decided 2026-11-16, Stage 10; `inst/include/zupmxode.h`):
+
+- **A prepared subject holds its records, not a timeline.** The timeline
+  depends on the parameters through `pre` (lags, bioavailability,
+  modelled rates and durations), so each call schedules again, in the
+  arena; only the reading, checking and counting of the table is done
+  once.
+- **theta, eta and covariates.** `pmx_ode_subjects(model, data, eta)`
+  splits the model's parameters: those named in `eta` (by default the
+  ones starting with `eta`, as `pmx_ode_sim()` does) are etas, columns of
+  `data` named like a parameter are covariates, and the rest are theta,
+  in the model's order. `theta` and `eta` are those vectors.
+- **`var` is computed in C, not by the `err` block**, from the error model
+  and standard deviations in `opts`, for the one output `opts` names:
+  `add^2`, `prop^2 * (f * f)`, their sum, or `add^2` on the log scale for
+  `lnorm`. The `err` block stays empty in v0.1.0; it is the place for an
+  error model written in the model language later.
+- **`opts` carries the buffers' length** (`n_pred`), so a short buffer is
+  a status code, and the solver (by default the one chosen when the
+  subject was prepared) and tolerances.
+- **Statuses**: 0 ok; 1 and 2 (solver failed, steady state unconverged)
+  still write `pred` and `var`; 16 and up write nothing that can be
+  used: unknown options version, bad argument (including a subject
+  prepared for another model, found by a fingerprint of the IR), short
+  buffer, wrong or small arena, an event rule broken at these
+  parameters, a closed form whose rate constants are not positive.
+- **One registered callable**, `zupmxode_api`, returns a versioned table
+  of function pointers; the header is plain C99 and its loader,
+  `zupmxode_api_load()`, compiles only where `R_ext/Rdynload.h` was
+  included first.
+- **Arenas are made on R's main thread**, sized for the subjects given;
+  on the interpreter tier each holds its own context (zumir D10). The
+  call itself allocates nothing but what LSODA allocates on the C heap
+  within it.
+
 ### 4.7 Lowering and execution tiers (C, through `zumir`)
 
 `pmx_ode_model()` passes the IR to C, which lowers each block to one MIR

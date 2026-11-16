@@ -82,7 +82,10 @@ One row per boundary the package crosses. An oracle knows the answer:
 | NONMEM-style data frames        | the same records from `pmx_ode_events()`; NONMEM's reading of MDV, DV, case and numbered compartments | tests/testthat/test-nonmem-data.R |
 | population simulation draws     | `MASS::mvrnorm()` from the same seed; omega within sampling error over 10^4 subjects | tests/testthat/test-sim.R |
 | residual error models           | each formula applied by hand to `pmx_ode_solve()` with the same draws | tests/testthat/test-sim.R |
-| C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects               | gap #12    |
+| C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects, every corpus case and output | tests/testthat/test-subject-eval.R |
+| C API `zupmxode_subject_eval()`  | the serial results, from many threads through the registered table | tests/testthat/test-subject-eval.R |
+| C API `zupmxode_subject_eval()`  | the status code of each refusal, and no R error                | tests/testthat/test-c-api.R |
+| C API header                     | compiles alone as C99, `-Wall -Wextra -Wpedantic -Werror`      | tests/c/test_header.c |
 <!-- markdownlint-enable MD013 -->
 
 ## Objects
@@ -97,8 +100,8 @@ cannot apply.
 | ------------------------------- | --------- | ------- | ------- | ------- |
 | compiled model (MIR context)    | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | n/a: the lowered code embeds its constants and points into no IR or R object |
 | per-thread interpreter contexts | tests/testthat/test-threads.R | n/a: made and freed within one call | tests/testthat/test-threads.R | an external pointer of the call, finalised on an interrupt |
-| prepared subjects               | gap #12   | gap #12 | gap #12 | gap #12 |
-| evaluation arena (C API)        | gap #12   | gap #12 | gap #12 | gap #12 |
+| prepared subjects               | tests/testthat/test-c-api.R | n/a: plain C memory with no handle, thread or descriptor | n/a: its external pointer and finalizer exist before its memory, and only that memory's own allocation failure can raise after it | its external pointer, made before the memory; copies its records and points into no R object or model |
+| evaluation arena (C API)        | tests/testthat/test-c-api.R | n/a: made and freed within a call in R; a C caller's own | n/a: in R, held by an external pointer with a finalizer from before it is made; in C, the caller's | an external pointer of the call in R; the caller in C, who keeps the model alive |
 <!-- markdownlint-enable MD013 -->
 
 ## Limits
