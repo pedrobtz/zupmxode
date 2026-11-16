@@ -12,7 +12,8 @@ enum {
   ZPX_LOWER_OK = 0,
   ZPX_LOWER_E_API,     /* zumir's table is not loaded */
   ZPX_LOWER_E_NO_TIER, /* the tier asked for does not run here */
-  ZPX_LOWER_E_MIR      /* MIR reported an error; *message has it */
+  ZPX_LOWER_E_MIR,     /* MIR reported an error; *message has it */
+  ZPX_LOWER_E_NO_MEMORY /* zumir or MIR could not allocate */
 };
 
 typedef void (*zpx_block_fn)(double t, const double *y, double *out, const double *par,
