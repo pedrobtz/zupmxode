@@ -28,7 +28,7 @@ is the one §4.7 describes.
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | [#32](https://github.com/pedrobtz/zupmxode/pull/32) | 2026-11-16 |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | [#33](https://github.com/pedrobtz/zupmxode/pull/33) | 2026-11-16 |
 | 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | [#38](https://github.com/pedrobtz/zupmxode/pull/38) | 2026-11-16 |
-| 12 | [Assurance](#stage-12--assurance) | quick | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | | |
+| 12 | [Assurance](#stage-12--assurance) | full | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | | 2026-11-16 |
 | 13 | [Full CI](#stage-13--full-ci) | full | [#15](https://github.com/pedrobtz/zupmxode/issues/15) | | |
 | 14 | [v0.1.0 readiness](#stage-14--v010-readiness) | full | [#16](https://github.com/pedrobtz/zupmxode/issues/16) | | |
 | 15 | [Review](#stage-15--review) | full | [#17](https://github.com/pedrobtz/zupmxode/issues/17) | | |
@@ -615,7 +615,9 @@ and Stage 13's full run the rest.
 **Issue.** [#14](https://github.com/pedrobtz/zupmxode/issues/14), sub-issue of
 [v0.1.0](https://github.com/pedrobtz/zupmxode/issues/1).
 
-**CI.** `quick`.
+**CI.** `full` (was `quick`; changed 2026-11-16): the stage patches the
+vendored liblsoda (patch 12) and the C core's error paths, which the
+full set's sanitizers, valgrind and platform legs check.
 
 **Goal.** No new features. Every required check is wired, every row of
 `.agents/assurance.md` filled, and the gap lists read.
@@ -632,6 +634,15 @@ and Stage 13's full run the rest.
 - `assurance.yml` green.
 - Every remaining `gap #<issue>` closed or moved under "After 0.1.0" with
   a reason.
+
+**Done (2026-11-16).** No gap left in `assurance.md`. The allocation
+sweep, run in a container before the workflow existed, found liblsoda's
+two unchecked allocations (vendor patch 12) and a memory failure in MIR
+reported as a bug (pedrobtz/zumir#111); its last run handled all 600
+positions. `tests/c/test_replay` gives the mutation job an oracle: corpus
+cases bit for bit. The coverage gap list gave #35, #36 and #37. The
+mutation survivors are read once the workflow has run on `main`, in
+Stage 13.
 
 **Design.** [§9](design.md#9-testing), [§12](design.md#12-acceptance-criteria-for-v010).
 
