@@ -1,0 +1,25 @@
+# The vendored-source guard (r-actions vendor.yml): tools/vendor/verify
+# rebuilds src/vendor/liblsoda from the pinned commit and its patches and
+# compares byte for byte, and a pull request that changes the vendored
+# files must change tools/vendor/manifest.tsv and checksums.sha256 too.
+on:
+  # `labeled`/`unlabeled` so that adding or removing a CI label reruns it.
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+name: vendor
+
+permissions:
+  contents: read
+
+jobs:
+  vendor:
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:vendor'))
+    uses: pedrobtz/r-actions/.github/workflows/vendor.yml@v1

@@ -1,6 +1,18 @@
 # Solving (design §4.5): the deterministic core, parameters in, predictions
-# out, one subject at a time. Closed-form models in this version of the
-# package (roadmap Stage 5); the general and linear solvers follow.
+# out, one subject at a time: closed forms for closed-form models (D21),
+# LSODA or Dormand-Prince for the rest (D5).
+
+# The solvers, by name, as zpx_solve_general() numbers them.
+solver_codes <- c(lsoda = 1L, dopri5 = 2L)
+
+# Options the solve takes from the model, for the tests and, from Stage 7,
+# pmx_ode_method(): the general solver and its tolerances (design §6.3),
+# and steady state's convergence tolerance and cap (iterations).
+solve_options <- function(model) {
+  o <- list(method = "lsoda", rtol = 1e-6, atol = 1e-8, ss_tol = 1e-8, ss_cap = 1000)
+  o[names(model$solve_opts)] <- model$solve_opts
+  o
+}
 
 #' Solve a model for one or more subjects
 #'
@@ -22,7 +34,13 @@
 #' @section Errors:
 #' `pmx_ode_error_events` for a record that breaks a rule of the event
 #' table, naming the row; `pmx_ode_error_argument` for a parameter with no
-#' value; `pmx_ode_error_solver` when a model's class has no solver yet.
+#' value; `pmx_ode_error_solver` for a closed-form model whose rate
+#' constants are not positive.
+#' @section Warnings:
+#' `pmx_ode_warning_solver` when the solver fails for a subject: that
+#' subject's outputs are `NA` from where it failed, and the others are
+#' solved (design §8). `pmx_ode_warning_steady_state` when a steady state
+#' of a model with no closed form does not converge.
 #' @examples
 #' m <- pmx_ode_model({
 #'   cl <- exp(tcl); v <- exp(tv); ka <- exp(tka)
@@ -40,20 +58,29 @@ pmx_ode_solve <- function(model, events, params = double()) {
     pmx_abort("pmx_ode_error_argument", "`params` must be a named numeric vector.",
               call = sys.call())
   }
-  if (model$class != "closed-form") {
-    pmx_abort("pmx_ode_error_solver", paste0(
-      "This version of zupmxode solves closed-form models only; this model is ",
-      model$class, "."
-    ), call = sys.call())
-  }
   rec <- as_records(events, model)
+  opts <- solve_options(model)
+  closed <- model$class == "closed-form" && identical(model$solve_opts$closed, NULL) ||
+    isTRUE(model$solve_opts$closed)
   ids <- unique(rec$id)
   parts <- lapply(ids, function(id) {
     keep <- rec$id == id
     one <- lapply(rec[setdiff(names(rec), "covariates")], function(x) x[keep])
     one$covariates <- rec$covariates[keep, , drop = FALSE]
     rows <- which(keep)
-    res <- solve_closed_one(model, one, params)
+    res <- solve_one(model, one, params, closed, opts)
+    if (!is.null(res$failed_row) && res$failed_row >= 0) {
+      pmx_warn("pmx_ode_warning_solver", paste0(
+        "The ", opts$method, " solver failed for subject ", id, " at time ",
+        format(res$failed_at), "; its outputs are NA from there."
+      ), id = id, time = res$failed_at)
+    }
+    if (!is.null(res$ss_unconverged) && res$ss_unconverged > 0) {
+      pmx_warn("pmx_ode_warning_steady_state", paste0(
+        "A steady state for subject ", id, " (row ", rows[res$ss_row + 1L],
+        ") did not converge in ", opts$ss_cap, " dosing intervals."
+      ), id = id, row = rows[res$ss_row + 1L])
+    }
     if (!is.null(res$error)) {
       if (res$error == "events") abort_events(rows[res$row + 1L], res$message)
       pmx_abort("pmx_ode_error_solver", paste0("Row ", rows[res$row + 1L], ": ",
@@ -83,7 +110,7 @@ lincmt_spec <- function(model) {
   as.integer(c(lc$ncmt, lc$depot, lc$micro, vapply(keys, function(k) at(p[[k]]), 0L)))
 }
 
-solve_closed_one <- function(model, rec, params) {
+solve_one <- function(model, rec, params, closed, opts) {
   par <- record_params(model, rec, params)
   ny <- length(model$states)
   n <- length(rec$time)
@@ -97,7 +124,13 @@ solve_closed_one <- function(model, rec, params) {
       if (rec$evid[i] %in% c(1L, 4L) && c >= 1L && c <= ny) pre[i, ] <- out[c, 1:4]
     }
   }
-  .Call(zpx_solve_closed, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
+  if (closed) {
+    return(.Call(zpx_solve_closed, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
+                 rec$rate, rec$dur, rec$ii, rec$addl, rec$ss, pre[, 1], pre[, 2], pre[, 3],
+                 pre[, 4], as.double(par), lincmt_spec(model), as.double(init)))
+  }
+  .Call(zpx_solve_general, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
         rec$rate, rec$dur, rec$ii, rec$addl, rec$ss, pre[, 1], pre[, 2], pre[, 3],
-        pre[, 4], as.double(par), lincmt_spec(model), as.double(init))
+        pre[, 4], as.double(par), as.double(init),
+        c(solver_codes[[opts$method]], opts$rtol, opts$atol, opts$ss_tol, opts$ss_cap))
 }

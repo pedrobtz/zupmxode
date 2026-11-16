@@ -71,3 +71,23 @@ hex_double <- function(h) {
   bytes <- as.raw(strtoi(substring(rep(h, each = 8), seq(1, 15, 2), seq(2, 16, 2)), 16L))
   readBin(bytes, "double", n = length(h), size = 8, endian = "big")
 }
+
+# A model with its solver options set, as pmx_ode_method() will (Stage 7).
+with_solver <- function(model, ...) {
+  model$solve_opts <- utils::modifyList(as.list(model$solve_opts), list(...))
+  model
+}
+
+# Corpus models where zupmxode's reading differs from an oracle's, each
+# with its section in fixtures/oracle/disagreements.md. Their parameters
+# make IC50 exactly 0, as R computes it too, so the effect's derivative is
+# 0 / 0 at t = 0: zupmxode reports a solver failure where rxode2's
+# reordered C arithmetic found a tiny IC50 and went on.
+zupmxode_disagreements <- c("lib_indirect_1cpt_inhi_kin_r0rmaxcrmax",
+                            "lib_indirect_1cpt_inhi_kout_r0rmaxcrmax")
+
+# Corpus models Dormand-Prince cannot start, besides those: a start its
+# step-size control cannot get past (rxode2 warned on both when the
+# fixtures were made), or a model that is NaN throughout (both engines
+# agree on NA there). LSODA solves the first and agrees on the second.
+dopri_stiff_cases <- c("lib_tgi_no_sat_powerLaw", "lib_tgi_sat_genVonBertalanffy")

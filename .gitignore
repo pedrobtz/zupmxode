@@ -56,3 +56,5 @@ CRAN-SUBMISSION
 # C tests built without R (tests/c/Makefile)
 tests/c/test_core
 tests/c/test_core.exe
+tests/c/test_lsoda
+tests/c/test_lsoda.exe

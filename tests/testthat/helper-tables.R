@@ -10,6 +10,19 @@
 expect_table_equal <- function(object, expected, by = c("id", "time"),
                                rtol = 1e-6, atol = 1e-8, label = NULL) {
   if (is.null(label)) label <- deparse1(substitute(object))
+  # NaN and NA both mean no number: rxode2 writes NA where zupmxode's
+  # arithmetic gives NaN, and dazdiff tells the two apart.
+  # A column read back from CSV with nothing but NA is logical; it is a
+  # column of missing numbers, so it is compared as one.
+  nan_to_na <- function(d) {
+    for (n in names(d)) {
+      if (is.logical(d[[n]]) && all(is.na(d[[n]]))) d[[n]] <- as.double(d[[n]])
+      if (is.double(d[[n]])) d[[n]][is.nan(d[[n]])] <- NA
+    }
+    d
+  }
+  object <- nan_to_na(object)
+  expected <- nan_to_na(expected)
   if (requireNamespace("dazdiff", quietly = TRUE) &&
         !isTRUE(getOption("zupmxode.test.local_tables"))) {
     dazdiff::expect_table_equal(object, expected, by = by,

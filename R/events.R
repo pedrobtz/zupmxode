@@ -126,8 +126,10 @@ record_params <- function(model, rec, params) {
                      " ", paste0("`", missing, "`", collapse = ", "), "."),
               call = NULL)
   }
-  out <- matrix(rep(as.double(p), length(rec$time)), ncol = length(model$params),
-                byrow = TRUE, dimnames = list(NULL, model$params))
+  # nrow given: with no parameters, rep() of nothing would leave no rows.
+  out <- matrix(rep(as.double(p), length(rec$time)), nrow = length(rec$time),
+                ncol = length(model$params), byrow = TRUE,
+                dimnames = list(NULL, model$params))
   for (cv in names(rec$covariates)) out[, cv] <- as.double(rec$covariates[[cv]])
   out
 }

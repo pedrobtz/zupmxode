@@ -1,0 +1,2 @@
+name	repository	commit	licence	files
+liblsoda	https://github.com/sdwfrost/liblsoda	16e49b428482e2efb552b0b4816a8ff8221e7efe	MIT	src/*.c src/*.h src/cfode_static.inc LICENSE, less printcf.c and strdup_printf.c

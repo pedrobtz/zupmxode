@@ -1,0 +1,26 @@
+#!/bin/sh
+# Verifies src/vendor/ (r-actions vendor.yml): every vendored file's
+# checksum is the recorded one, and the vendoring script, run from the
+# commit in manifest.tsv, reproduces the tree byte for byte, so nothing in
+# it was edited by hand.
+#
+#   sh tools/vendor/verify            # from the package root
+set -eu
+sum() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$@"; else shasum -a 256 "$@"; fi; }
+( cd src/vendor && find . -type f | LC_ALL=C sort | xargs -I{} sh -c 'sum() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$@"; else shasum -a 256 "$@"; fi; }; sum "{}"' ) > /tmp/zpx-vendor-sums.$$
+if ! cmp -s /tmp/zpx-vendor-sums.$$ tools/vendor/checksums.sha256; then
+  echo "vendored files differ from tools/vendor/checksums.sha256:" >&2
+  diff /tmp/zpx-vendor-sums.$$ tools/vendor/checksums.sha256 >&2 || true
+  rm -f /tmp/zpx-vendor-sums.$$
+  exit 1
+fi
+rm -f /tmp/zpx-vendor-sums.$$
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+sh tools/vendor/liblsoda.sh "$tmp/liblsoda"
+if ! diff -r "$tmp/liblsoda" src/vendor/liblsoda >/dev/null; then
+  echo "src/vendor/liblsoda is not what tools/vendor/liblsoda.sh makes from the pinned commit:" >&2
+  diff -r "$tmp/liblsoda" src/vendor/liblsoda >&2 || true
+  exit 1
+fi
+echo "vendor: ok"
