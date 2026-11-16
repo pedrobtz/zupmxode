@@ -21,7 +21,7 @@ is the one §4.7 describes.
 | 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | [#23](https://github.com/pedrobtz/zupmxode/pull/23) | 2026-11-16 |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | [#24](https://github.com/pedrobtz/zupmxode/pull/24) | 2026-11-16 |
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | [#25](https://github.com/pedrobtz/zupmxode/pull/25) | 2026-11-16 |
-| 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | | 2026-11-16 |
+| 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | [#26](https://github.com/pedrobtz/zupmxode/pull/26) | 2026-11-16 |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | | |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | |
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | | |
