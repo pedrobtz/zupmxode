@@ -544,3 +544,269 @@ SEXP zpx_solve_general(SEXP x, SEXP time, SEXP evid, SEXP amt, SEXP cmt, SEXP ra
   UNPROTECT(3);
   return res;
 }
+
+/* ---- The linear solver (design §4.3): the matrix exponential ------------ */
+
+#include "core/expm.h"
+
+#define ZPX_LINEAR_MAX_STATES (ZPX_EXPM_MAX - 1)
+
+typedef struct linear {
+  int n;
+  double a[ZPX_LINEAR_MAX_STATES * ZPX_LINEAR_MAX_STATES]; /* A, row-major */
+  double c[ZPX_LINEAR_MAX_STATES];                         /* the constant input */
+  double mwork[8 * ZPX_EXPM_MAX * ZPX_EXPM_MAX];
+  double M[ZPX_EXPM_MAX * ZPX_EXPM_MAX], X[ZPX_EXPM_MAX * ZPX_EXPM_MAX];
+} linear;
+
+/* A and c of dy/dt = A y + c from the model's rhs block: c at y = 0, each
+ * column of A as rhs(e_j) - c. Exact for a linear model, whose rhs is
+ * affine in y, up to rounding. */
+static void linear_probe(linear *L, zpx_model *m, double t, const double *par, double *work,
+                         double *ybuf, double *dbuf) {
+  int n = L->n;
+  for (int i = 0; i < n; i++) ybuf[i] = 0;
+  m->lowered.fn[ZPX_RHS](t, ybuf, L->c, par, work);
+  for (int j = 0; j < n; j++) {
+    ybuf[j] = 1;
+    m->lowered.fn[ZPX_RHS](t, ybuf, dbuf, par, work);
+    for (int i = 0; i < n; i++) L->a[i * n + j] = dbuf[i] - L->c[i];
+    ybuf[j] = 0;
+  }
+}
+
+/* exp of [[A dt, (c + r) dt], [0, 0]] into L->X: E(dt) in its top-left
+ * block, G(dt)(c + r) in its last column. r may be NULL; with_c says
+ * whether the constant input is included. */
+static int linear_exp(linear *L, double dt, const double *r, int with_c) {
+  int n = L->n, m = n + 1;
+  memset(L->M, 0, sizeof(double) * (size_t) (m * m));
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) L->M[i * m + j] = L->a[i * n + j] * dt;
+    L->M[i * m + n] = ((with_c ? L->c[i] : 0) + (r != NULL ? r[i] : 0)) * dt;
+  }
+  return zpx_expm(m, L->M, L->X, L->mwork);
+}
+
+/* y <- E(dt) y + G(dt)(c + r). */
+static int linear_step(linear *L, double dt, double *y, const double *r) {
+  int n = L->n, m = n + 1;
+  if (!(dt > 0)) return 0;
+  if (linear_exp(L, dt, r, 1) != 0) return 1;
+  double out[ZPX_LINEAR_MAX_STATES];
+  for (int i = 0; i < n; i++) {
+    double s = L->X[i * m + n];
+    for (int j = 0; j < n; j++) s += L->X[i * m + j] * y[j];
+    out[i] = s;
+  }
+  memcpy(y, out, sizeof(double) * (size_t) n);
+  return 0;
+}
+
+/* Solves (I - E(ii)) y = b for y, E from L->X after linear_exp(ii). */
+static int linear_ss_solve(linear *L, double *b, double *y) {
+  int n = L->n, m = n + 1;
+  double M[ZPX_LINEAR_MAX_STATES * ZPX_LINEAR_MAX_STATES];
+  for (int i = 0; i < n; i++)
+    for (int j = 0; j < n; j++) M[i * n + j] = (i == j ? 1.0 : 0.0) - L->X[i * m + j];
+  /* Gaussian elimination with partial pivoting on M y = b. */
+  for (int c = 0; c < n; c++) {
+    int p = c;
+    for (int r = c + 1; r < n; r++)
+      if (fabs(M[r * n + c]) > fabs(M[p * n + c])) p = r;
+    if (M[p * n + c] == 0) return 1;
+    if (p != c) {
+      for (int k = 0; k < n; k++) {
+        double t = M[c * n + k];
+        M[c * n + k] = M[p * n + k];
+        M[p * n + k] = t;
+      }
+      double t = b[c];
+      b[c] = b[p];
+      b[p] = t;
+    }
+    for (int r = c + 1; r < n; r++) {
+      double f = M[r * n + c] / M[c * n + c];
+      for (int k = c; k < n; k++) M[r * n + k] -= f * M[c * n + k];
+      b[r] -= f * b[c];
+    }
+  }
+  for (int c = n - 1; c >= 0; c--) {
+    double s = b[c];
+    for (int k = c + 1; k < n; k++) s -= M[c * n + k] * y[k];
+    y[c] = s / M[c * n + c];
+  }
+  return 0;
+}
+
+/* Steady state just before a dose (design §4.2), with the constant input
+ * c running throughout: a bolus b every ii, an infusion r for dur every
+ * ii, or (ii = 0) a constant infusion r. */
+static int linear_ss(linear *L, int kind, double ii, double dur, const double *v, double *y) {
+  int n = L->n, m = n + 1;
+  double b[ZPX_LINEAR_MAX_STATES] = {0};
+  if (kind == 2) {
+    /* A y + c + r = 0. */
+    for (int i = 0; i < n; i++) b[i] = -(L->c[i] + v[i]);
+    /* Reuse the solver on (I - E) with E = I + A: I - E = -A. */
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++) L->X[i * m + j] = (i == j ? 1.0 : 0.0) + L->a[i * n + j];
+    for (int i = 0; i < n; i++) b[i] = -b[i];
+    return linear_ss_solve(L, b, y);
+  }
+  if (kind == 0) {
+    /* y = E (y + v) + G c  =>  (I - E) y = E v + G c. */
+    if (linear_exp(L, ii, NULL, 1) != 0) return 1;
+    for (int i = 0; i < n; i++) {
+      double s = L->X[i * m + n];
+      for (int j = 0; j < n; j++) s += L->X[i * m + j] * v[j];
+      b[i] = s;
+    }
+    return linear_ss_solve(L, b, y);
+  }
+  /* Infusion: from a trough y, dur with r then ii - dur without:
+   * y = E(ii) y + [E(ii - dur) G(dur)(c + r) + G(ii - dur) c]. */
+  double z[ZPX_LINEAR_MAX_STATES] = {0};
+  if (linear_step(L, dur, z, v) != 0) return 1;
+  double zero[ZPX_LINEAR_MAX_STATES] = {0};
+  if (linear_step(L, ii - dur, z, zero) != 0) return 1;
+  memcpy(b, z, sizeof(double) * (size_t) n);
+  if (linear_exp(L, ii, NULL, 0) != 0) return 1;
+  return linear_ss_solve(L, b, y);
+}
+
+SEXP zpx_solve_linear(SEXP x, SEXP time, SEXP evid, SEXP amt, SEXP cmt, SEXP rate, SEXP dur,
+                      SEXP ii, SEXP addl, SEXP ss, SEXP lag, SEXP f, SEXP mrate, SEXP mdur,
+                      SEXP par, SEXP init) {
+  zpx_model *m = zpx_model_get(x);
+  if (m == NULL) Rf_error("the model has no code: it was saved and not restored");
+  int n = (int) XLENGTH(time);
+  int ny = m->dims.ny, npar = m->dims.npar, nwork = m->dims.nwork;
+  int ncap = m->dims.block[ZPX_POST].nout;
+  if (ny > ZPX_LINEAR_MAX_STATES) Rf_error("too many states for the linear solver");
+  if (TYPEOF(par) != REALSXP || XLENGTH(par) != (R_xlen_t) n * npar) Rf_error("bad parameters");
+  if (TYPEOF(init) != REALSXP || XLENGTH(init) != ny) Rf_error("bad initial amounts");
+  zpx_record *rec = (zpx_record *) R_alloc((size_t) n + 1, sizeof(zpx_record));
+  for (int i = 0; i < n; i++) {
+    rec[i].time = REAL(time)[i];
+    rec[i].amt = REAL(amt)[i];
+    rec[i].rate = REAL(rate)[i];
+    rec[i].dur = REAL(dur)[i];
+    rec[i].ii = REAL(ii)[i];
+    rec[i].lag = REAL(lag)[i];
+    rec[i].f = REAL(f)[i];
+    rec[i].mrate = REAL(mrate)[i];
+    rec[i].mdur = REAL(mdur)[i];
+    rec[i].evid = INTEGER(evid)[i];
+    rec[i].cmt = INTEGER(cmt)[i];
+    rec[i].addl = INTEGER(addl)[i];
+    rec[i].ss = INTEGER(ss)[i];
+  }
+  int error, where;
+  long count = zpx_sched_count(rec, n, ny, &error, &where);
+  if (count < 0) return fail("events", zpx_sched_error_message(error), where);
+  zpx_entry *ent = (zpx_entry *) R_alloc((size_t) count + 1, sizeof(zpx_entry));
+  count = zpx_sched_build(rec, n, ny, ent, &error, &where);
+  if (count < 0) return fail("events", zpx_sched_error_message(error), where);
+  long nobs = 0, nlink = 0;
+  for (long i = 0; i < count; i++) {
+    if (ent[i].kind == ZPX_E_OBS) nobs++;
+    if (ent[i].link + 1 > nlink) nlink = ent[i].link + 1;
+    if (ent[i].kind == ZPX_E_OFF)
+      return fail("solver", "a compartment switched off is not supported by the linear solver", ent[i].rec);
+  }
+  SEXP out = PROTECT(Rf_allocMatrix(REALSXP, (int) nobs, 1 + ny + ncap));
+  SEXP orow = PROTECT(Rf_allocVector(INTSXP, (R_xlen_t) nobs));
+  double *o = REAL(out);
+  double *work = (double *) R_alloc((size_t) nwork + 1, sizeof(double));
+  double *cap = (double *) R_alloc((size_t) ncap + 1, sizeof(double));
+  double *active = (double *) R_alloc((size_t) nlink + 1, sizeof(double));
+  double *pcur = (double *) R_alloc((size_t) npar + 1, sizeof(double));
+  linear *L = (linear *) R_alloc(1, sizeof(linear));
+  L->n = ny;
+  double y[ZPX_LINEAR_MAX_STATES] = {0}, r[ZPX_LINEAR_MAX_STATES] = {0},
+         zero[ZPX_LINEAR_MAX_STATES] = {0}, ybuf[ZPX_LINEAR_MAX_STATES],
+         dbuf[ZPX_LINEAR_MAX_STATES];
+  for (long l = 0; l < nlink; l++) active[l] = 0;
+  memcpy(y, REAL(init), sizeof(double) * (size_t) ny);
+  int cur = -1;
+  double t = count > 0 ? ent[0].time : 0;
+#define SET_RECORD(i)                                                          \
+  do {                                                                         \
+    cur = (i);                                                                 \
+    for (int p = 0; p < npar; p++) pcur[p] = REAL(par)[(R_xlen_t) p * n + cur]; \
+    m->lowered.fn[ZPX_IVL](t, zero, work, pcur, work);                         \
+    linear_probe(L, m, t, pcur, work, ybuf, dbuf);                             \
+  } while (0)
+  SET_RECORD(0);
+  long k = 0;
+  for (long i = 0; i < count; i++) {
+    const zpx_entry *e = &ent[i];
+    if (e->time > t) {
+      if (linear_step(L, e->time - t, y, r) != 0) {
+        UNPROTECT(2);
+        return fail("solver", "the linear system's matrix is not finite", e->rec);
+      }
+      t = e->time;
+    }
+    if (e->phase == 2 && e->rec != cur) SET_RECORD(e->rec);
+    int c = e->cmt - 1;
+    switch (e->kind) {
+    case ZPX_E_OBS:
+      m->lowered.fn[ZPX_POST](t, y, cap, pcur, work);
+      o[k] = t;
+      for (int j = 0; j < ny; j++) o[k + (R_xlen_t) nobs * (1 + j)] = y[j];
+      for (int j = 0; j < ncap; j++) o[k + (R_xlen_t) nobs * (1 + ny + j)] = cap[j];
+      INTEGER(orow)[k] = e->rec;
+      k++;
+      break;
+    case ZPX_E_BOLUS: y[c] += e->amount; break;
+    case ZPX_E_INF_START:
+      active[e->link] = e->rate;
+      r[c] += e->rate;
+      break;
+    case ZPX_E_INF_END:
+      if (active[e->link] != 0) {
+        r[c] -= active[e->link];
+        active[e->link] = 0;
+        if (fabs(r[c]) < 1e-12 * e->rate) r[c] = 0;
+      }
+      break;
+    case ZPX_E_RESET:
+      for (int j = 0; j < ny; j++) y[j] = r[j] = 0;
+      for (long l = 0; l < nlink; l++) active[l] = 0;
+      break;
+    case ZPX_E_SS: {
+      double s[ZPX_LINEAR_MAX_STATES] = {0}, v[ZPX_LINEAR_MAX_STATES] = {0};
+      if (e->ss == 1) {
+        for (int j = 0; j < ny; j++) y[j] = r[j] = 0;
+        for (long l = 0; l < nlink; l++) active[l] = 0;
+      }
+      int kind = e->rate > 0 ? (e->ii == 0 ? 2 : 1) : 0;
+      v[c] = kind == 0 ? e->amount : e->rate;
+      /* SS = 2 adds the dose's own steady state to what is there, which
+       * already carries the constant input's share: without c. */
+      double saved_c[ZPX_LINEAR_MAX_STATES];
+      memcpy(saved_c, L->c, sizeof(double) * (size_t) ny);
+      if (e->ss == 2)
+        for (int j = 0; j < ny; j++) L->c[j] = 0;
+      int bad = linear_ss(L, kind, e->ii, e->dur, v, s);
+      memcpy(L->c, saved_c, sizeof(double) * (size_t) ny);
+      if (bad) {
+        UNPROTECT(2);
+        return fail("solver", "the linear system has no steady state", e->rec);
+      }
+      for (int j = 0; j < ny; j++) y[j] = (e->ss == 1 ? 0 : y[j]) + s[j];
+      break;
+    }
+    default: break;
+    }
+  }
+#undef SET_RECORD
+  const char *names[] = {"out", "row", ""};
+  SEXP res = PROTECT(Rf_mkNamed(VECSXP, names));
+  SET_VECTOR_ELT(res, 0, out);
+  SET_VECTOR_ELT(res, 1, orow);
+  UNPROTECT(3);
+  return res;
+}

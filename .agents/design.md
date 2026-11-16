@@ -268,8 +268,15 @@ depend on individual parameters and covariates.
   LSODA at `rtol = 1e-10`.
 - **Matrix exponential**: Padé with scaling and squaring on the system
   matrix, recomputed when a parameter or covariate changes, with the
-  particular solution for constant infusion. For systems up to about 20
-  states; above that the compiler falls back to general.
+  particular solution for constant infusion. For systems up to 20
+  states; above that the model is solved by LSODA. Built in Stage 7
+  (2026-11-16): Padé 13 (Higham 2005) of the augmented matrix
+  [[A, c + r], [0, 0]], which carries the model's constant input c and
+  the infusions r exactly; A and c come from the rhs block at y = 0 and
+  at each unit vector, exact for a model affine in its states. Steady
+  state is the fixed point of one interval, solved directly; SS = 2 adds
+  the dose's own steady state without c, which the state already carries.
+  A switched-off compartment takes a subject to LSODA.
 - **LSODA**: `liblsoda` vendored (D5), one instance per thread, with
   the Jacobian by finite differences in v0.1.0. It calls `rhs` through a
   function pointer, as it would call any C function.
@@ -290,8 +297,8 @@ LSODA can step over a finite-time singularity (dx/dt = x²) and report
 success, which no general test separates from a large solution.
 
 The default is the most specific solver the classification allows;
-`method=` overrides it, and `pmx_ode_info(model)` says what was chosen
-and why.
+`pmx_ode_method()` overrides it within what the class allows, and
+`pmx_ode_info(model)` says what was chosen and why.
 
 ### 4.4 Parallel runtime (C)
 

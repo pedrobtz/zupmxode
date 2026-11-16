@@ -24,7 +24,7 @@ locked-down and validated machines often lack. zupmxode runs the same
 models with nothing but R. This page compiles a one-compartment model
 with first-order absorption, and gives it a week of daily 100 mg doses:
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
                       time = seq(0, 168, by = 1))
 ```
@@ -45,7 +45,7 @@ m <- pmx_ode_model({
 m
 ```
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 pmx_ode_info(m)
 ```
 
@@ -54,10 +54,11 @@ pmx_ode_info(m)
 `pmx_ode_solve()` is the deterministic core: parameters in, predictions
 out, with no random draws.
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 out <- pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
                                         eta.ka = 0, eta.cl = 0,
                                         eta.v = 0))
+head(out)
 ```
 
 ## Simulate a population, reproducibly
@@ -81,9 +82,9 @@ exponential, or a general ODE solver), and the tier is native code unless
 the platform cannot run it. `pmx_ode_info()` says which was chosen, and
 both can be overridden.
 
-```{r, eval = FALSE}
-pmx_ode_method(m, "lsoda")
-pmx_ode_tier(m, "interp")
+```{r, eval = TRUE}
+pmx_ode_method(pmx_ode_method(m, "lsoda"))
+pmx_ode_tier(pmx_ode_tier(m, "interp"))
 ```
 
 ## Where next

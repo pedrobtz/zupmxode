@@ -13,7 +13,9 @@ test_that("a general model's steady state is where repeated dosing goes", {
 })
 
 test_that("the cap: converging on the last interval allowed is no warning", {
-  m <- pmx_ode_model("d/dt(central) <- -k * central")
+  # LSODA: a linear model would take the matrix exponential, whose steady
+  # state is solved directly, with no intervals to count.
+  m <- pmx_ode_method(pmx_ode_model("d/dt(central) <- -k * central"), "lsoda")
   ev <- pmx_ode_events(amt = 100, ii = 12, ss = 1L, cmt = "central", time = 1)
   warns <- function(cap) {
     w <- FALSE

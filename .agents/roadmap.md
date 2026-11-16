@@ -23,7 +23,7 @@ is the one §4.7 describes.
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | [#25](https://github.com/pedrobtz/zupmxode/pull/25) | 2026-11-16 |
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | [#26](https://github.com/pedrobtz/zupmxode/pull/26) | 2026-11-16 |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | [#27](https://github.com/pedrobtz/zupmxode/pull/27) | 2026-11-16 |
-| 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | |
+| 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | 2026-11-16 |
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | | |
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | | |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | | |
@@ -434,6 +434,11 @@ most specific solver, and the user can see and override the choice.
 **Exit criteria.**
 
 - Every Tests line exists, uses its oracle, and was seen to fail.
+
+**Deviation, 2026-11-16.** The state limit is straddled at 20 and 21
+compartments rather than at limit ± 1 around a limit of its own: the
+matrix exponential takes 20, and 21 goes to LSODA, so 19 says nothing
+new.
 
 **Design.** [§4.3](design.md#43-solvers-c), D6.
 
