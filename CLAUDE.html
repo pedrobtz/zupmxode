@@ -44,7 +44,7 @@
 </div>
 <div class="section level2">
 <h2 id="what-this-is">What this is<a class="anchor" aria-label="anchor" href="#what-this-is"></a></h2>
-<p>zupmxode simulates population PK/PD models, written in a subset of the rxode2 model language, over NONMEM-style event records, in parallel over subjects, with no C compiler on the machine. Models are parsed in R, compiled to the package’s own IR, and turned into native code (or run in MIR’s interpreter) through <code>zumir</code>. It is a simulation engine with a C API for estimators; it is not an estimator, not a new model language, and has no <code>Imports</code>.</p>
+<p>zupmxode simulates population PK/PD models, written in a subset of the rxode2 model language, over NONMEM-style event records, in parallel over subjects, with no C compiler on the machine. Models are parsed in R, compiled to the package’s own IR, and turned into native code (or run in MIR’s interpreter) through <code>zumir</code>. It is a simulation engine with a C API for estimators; it is not an estimator, not a new model language, and imports nothing but <code>zumir</code> (design D20).</p>
 <p>The specification is <a href=".agents/design.html"><code>.agents/design.md</code></a>, adopted from RFC 0047. It outranks this file: <code>CLAUDE.md</code> orients, the design decides. The whole package rests on D2 (MIR through <code>zumir</code>), which is provisional on <code>zumir</code>’s Stage 0 spike; §11.1 of the design says what changes if the spike fails.</p>
 </div>
 <div class="section level2">
@@ -68,12 +68,23 @@
 </ul></div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
-<p>To be written as stages land; see <code>.agents/design.md</code> §4. The engine is C in <code>src/core/</code>, which never includes R’s headers, so the C tests, fuzz harnesses and mutation runs build it alone; <code>src/zupmxode.c</code> is the only R glue and registers the <code>.Call</code> entry points.</p>
-</div>
+<p>See <code>.agents/design.md</code> §4 for the whole. Built so far:</p>
+<ul><li>
+<code>src/core/ir.[ch]</code>: the IR format, its verifier, a reference evaluator (the tests’ oracle and the fuzz harness’s, never an execution tier) and the math table. No R headers.</li>
+<li>
+<code>src/zpx_lower.c</code>: IR to MIR, one module and one function per block, through <code>zumir</code>’s C API and emitter; <code>zumir_import()</code> registers the table’s functions the C library lacks.</li>
+<li>
+<code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>
+<li>
+<code>R/ir.R</code>: the IR assembler (tests now, the compiler from Stage 3); <code>R/model.R</code>: tiers, lowering, regeneration after <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> (D18).</li>
+<li>
+<code>src/zupmxode.c</code>: registration only.</li>
+</ul></div>
 <div class="section level2">
 <h2 id="invariants-that-are-easy-to-break">Invariants that are easy to break<a class="anchor" aria-label="anchor" href="#invariants-that-are-easy-to-break"></a></h2>
 <p>These are fixed by the design before any code exists; each names the section that decides it.</p>
-<ul><li>No <code>Imports</code>, ever (§2, §12). A runtime dependency breaks the “stock R installation” promise the package exists for.</li>
+<ul><li>No <code>Imports</code> but <code>zumir</code> (§2, §12, D20). Another runtime dependency breaks the “stock R installation” promise the package exists for. <code>zumir</code> is there only because <code>R_GetCCallable()</code> needs its namespace loaded.</li>
+<li>Nothing under <code>src/core/</code> includes R’s headers (<code>tests/c</code> fails to build if it does). The IR verifier in <code>src/core/ir.c</code> is the only thing between a saved IR and lowered code: every new opcode or operand needs its range check there, its refusal test in <code>test-ir-verify.R</code>, and a seed in <code>tests/fuzz/corpus/</code>.</li>
 <li>C code never calls <code>error()</code> and never touches an R object inside the parallel region or <code>zupmxode_subject_eval()</code>; it returns status codes and writes into caller-owned buffers (§4.4, §4.6, §8). Breaking it makes the engine unsafe for estimators calling it from threads.</li>
 <li>Random draws happen only in R, with R’s RNG (D7). C is deterministic, so results are reproducible from <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> at any thread count.</li>
 <li>MIR is reached only through <code>zumir</code>’s C API and never vendored here (D14); the IR is the package’s own and nothing outside the lowering depends on MIR (D13).</li>
@@ -87,7 +98,10 @@
 <code>helper-tables.R</code>: <code>expect_table_equal()</code> at the §6.3 tolerances, through <code>dazdiff</code> when installed; <code>table_differences()</code> is the local route, tested on its own.</li>
 <li>
 <code>helper-oracle.R</code>: reads fixtures and solves with rxode2. The generator sources it, so tests and fixtures solve the same way.</li>
-</ul><p>The suite runs shuffled, top-level code included: build test data inside <code>test_that()</code> or in a helper, never at file level. Runtime: about 20 s locally, most of it rxode2 compiling three models.</p>
+<li>
+<code>helper-models.R</code>: hand-built IR models, each with its answer written in R; <code>available_tiers()</code> lists the tiers this session runs.</li>
+</ul><p><code>fixtures/math-reference.csv</code> is the math table’s oracle, from <code>tools/make-math-reference.R</code> (needs Rmpfr); <code>tests/fuzz/corpus/</code> the fuzz seeds, from <code>tools/make-fuzz-corpus.R</code>.</p>
+<p>The suite runs shuffled, top-level code included: build test data inside <code>test_that()</code> or in a helper, never at file level. Runtime: about 20 s locally, most of it rxode2 compiling three models.</p>
 </div>
 <div class="section level2">
 <h2 id="continuous-integration">Continuous integration<a class="anchor" aria-label="anchor" href="#continuous-integration"></a></h2>
