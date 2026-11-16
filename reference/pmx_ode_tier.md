@@ -31,5 +31,5 @@ tier.
 
 `pmx_ode_error_no_tier` when the tier asked for does not run in this
 session, or when none does:
-[`zumir::zumir_tier()`](https://rdrr.io/pkg/zumir/man/zumir_info.html)
+[`zumir::zumir_tier()`](https://pedrobtz.github.io/zumir/reference/zumir_info.html)
 reports what the system allows.

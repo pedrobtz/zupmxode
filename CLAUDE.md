@@ -75,6 +75,10 @@ See `.agents/design.md` §4 for the whole. Built so far:
   where they meet (D21); `src/zpx_solve.c` walks a subject’s timeline
   with it; `R/solve.R` is
   [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md).
+- `src/core/dopri.[ch]`: Dormand-Prince 5(4) with dense output;
+  `zpx_solve_general()` in `src/zpx_solve.c` runs LSODA or it over the
+  timeline, with dense output across runs of observations, steady state
+  by repeated dosing, and a failure as NA from where it happened.
 - `src/zpx_lower.c`: IR to MIR, one module and one function per block,
   through `zumir`’s C API and emitter; `zumir_import()` registers the
   table’s functions the C library lacks.
@@ -168,6 +172,45 @@ stages are 2, 6, 8 and the three closing ones.
 
 ## Vendored native code
 
-`liblsoda` (`sdwfrost/liblsoda`, MIT), made re-entrant per thread (D5).
-Not vendored yet: record the pinned commit and every local patch here
-when it is.
+`liblsoda` (<https://github.com/sdwfrost/liblsoda>, MIT), pinned at
+`16e49b428482e2efb552b0b4816a8ff8221e7efe` (upstream’s last commit,
+2018), in `src/vendor/liblsoda/`. `tools/vendor/liblsoda.sh` makes the
+tree from that commit and is the only place it is changed;
+`tools/vendor/verify` (the `vendor` workflow) rebuilds it and compares
+byte for byte. The patches, all in that script (8 to 11 found by Stage
+6’s full run):
+
+1.  No console output: `printf`/`fprintf(stderr, …)` become `LSODA_LOG`,
+    which does nothing (the messages are in `ctx->error`).
+2.  Only the sources upstream’s Makefile builds (not `printcf.c`, nor
+    the `#error` stub `ewset.c`).
+3.  `_strdup_printf()` allocates the NUL’s byte and checks `malloc()`.
+4.  The BLAS routines’ K&R definitions become prototypes (C23).
+5.  `lsoda()`’s `ihit` starts at 0, and `softfailure()`’s loop variable
+    no longer shadows the `i` its message prints (an uninitialised
+    read).
+6.  `(void)` for empty parameter lists.
+7.  `solsy()` returns 0 rather than `abort()` for the banded Jacobian
+    liblsoda never builds (CRAN: no C that can end R).
+8.  A stray comma in `lsoda()`’s message for a repeatedly failed error
+    test made `%g` read a `char *` and `%s` a double: a crash on that
+    path.
+9.  `ERROR()`, `hardfailure()` and `softfailure()` are C99 variadic
+    macros, not GNU’s `, ## __VA_ARGS__` (a significant warning under
+    clang 23).
+10. `_strdup_printf()` has printf’s format attribute, so the compiler
+    checks every message, measures into a one-byte buffer, not NULL, and
+    returns NULL for a NULL format.
+11. The BLAS routines are `lsoda_daxpy` … `lsoda_idamax`: under the
+    plain names the linker bound them to the BLAS R links (OpenBLAS’s
+    Fortran `idamax_`, by pointer), so an `int` was read as an address.
+    Every symbol is hidden too (`$(C_VISIBILITY)`), but
+    `R_init_zupmxode`.
+
+To change the pin or a patch: edit the script or `manifest.tsv`, run
+`sh tools/vendor/liblsoda.sh`, regenerate
+`tools/vendor/checksums.sha256`
+(`cd src/vendor && find . -type f | LC_ALL=C sort | xargs shasum -a 256`),
+and run `sh tools/vendor/verify`. One instance per thread: each solve
+makes its own context. `make -C tests/c` builds it standalone and checks
+two contexts in turn against each alone.

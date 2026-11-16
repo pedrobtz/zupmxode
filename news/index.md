@@ -18,3 +18,7 @@
 - [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
   solves closed-form models (`linCmt()`) for one or more subjects,
   exactly, with time-varying covariates, resets and steady state.
+
+- [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
+  solves models with no closed form, with LSODA (from the bundled
+  liblsoda) or Dormand-Prince 5(4).

@@ -76,6 +76,8 @@
 <li>
 <code>src/core/linear.[ch]</code>: the closed forms, the state carried exactly between events through the eigenvalues, with a matrix exponential where they meet (D21); <code>src/zpx_solve.c</code> walks a subject’s timeline with it; <code>R/solve.R</code> is <code><a href="reference/pmx_ode_solve.html">pmx_ode_solve()</a></code>.</li>
 <li>
+<code>src/core/dopri.[ch]</code>: Dormand-Prince 5(4) with dense output; <code>zpx_solve_general()</code> in <code>src/zpx_solve.c</code> runs LSODA or it over the timeline, with dense output across runs of observations, steady state by repeated dosing, and a failure as NA from where it happened.</li>
+<li>
 <code>src/zpx_lower.c</code>: IR to MIR, one module and one function per block, through <code>zumir</code>’s C API and emitter; <code>zumir_import()</code> registers the table’s functions the C library lacks.</li>
 <li>
 <code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>
@@ -118,7 +120,25 @@
 </div>
 <div class="section level2">
 <h2 id="vendored-native-code">Vendored native code<a class="anchor" aria-label="anchor" href="#vendored-native-code"></a></h2>
-<p><code>liblsoda</code> (<code>sdwfrost/liblsoda</code>, MIT), made re-entrant per thread (D5). Not vendored yet: record the pinned commit and every local patch here when it is.</p>
+<p><code>liblsoda</code> (<a href="https://github.com/sdwfrost/liblsoda" class="external-link uri">https://github.com/sdwfrost/liblsoda</a>, MIT), pinned at <code>16e49b428482e2efb552b0b4816a8ff8221e7efe</code> (upstream’s last commit, 2018), in <code>src/vendor/liblsoda/</code>. <code>tools/vendor/liblsoda.sh</code> makes the tree from that commit and is the only place it is changed; <code>tools/vendor/verify</code> (the <code>vendor</code> workflow) rebuilds it and compares byte for byte. The patches, all in that script (8 to 11 found by Stage 6’s full run):</p>
+<ol style="list-style-type: decimal"><li>No console output: <code>printf</code>/<code>fprintf(stderr, …)</code> become <code>LSODA_LOG</code>, which does nothing (the messages are in <code>ctx-&gt;error</code>).</li>
+<li>Only the sources upstream’s Makefile builds (not <code>printcf.c</code>, nor the <code>#error</code> stub <code>ewset.c</code>).</li>
+<li>
+<code>_strdup_printf()</code> allocates the NUL’s byte and checks <code>malloc()</code>.</li>
+<li>The BLAS routines’ K&amp;R definitions become prototypes (C23).</li>
+<li>
+<code>lsoda()</code>’s <code>ihit</code> starts at 0, and <code>softfailure()</code>’s loop variable no longer shadows the <code>i</code> its message prints (an uninitialised read).</li>
+<li>
+<code>(void)</code> for empty parameter lists.</li>
+<li>
+<code>solsy()</code> returns 0 rather than <code>abort()</code> for the banded Jacobian liblsoda never builds (CRAN: no C that can end R).</li>
+<li>A stray comma in <code>lsoda()</code>’s message for a repeatedly failed error test made <code>%g</code> read a <code>char *</code> and <code>%s</code> a double: a crash on that path.</li>
+<li>
+<code>ERROR()</code>, <code>hardfailure()</code> and <code>softfailure()</code> are C99 variadic macros, not GNU’s <code>, ## __VA_ARGS__</code> (a significant warning under clang 23).</li>
+<li>
+<code>_strdup_printf()</code> has printf’s format attribute, so the compiler checks every message, measures into a one-byte buffer, not NULL, and returns NULL for a NULL format.</li>
+<li>The BLAS routines are <code>lsoda_daxpy</code> … <code>lsoda_idamax</code>: under the plain names the linker bound them to the BLAS R links (OpenBLAS’s Fortran <code>idamax_</code>, by pointer), so an <code>int</code> was read as an address. Every symbol is hidden too (<code>$(C_VISIBILITY)</code>), but <code>R_init_zupmxode</code>.</li>
+</ol><p>To change the pin or a patch: edit the script or <code>manifest.tsv</code>, run <code>sh tools/vendor/liblsoda.sh</code>, regenerate <code>tools/vendor/checksums.sha256</code> (<code>cd src/vendor &amp;&amp; find . -type f | LC_ALL=C sort | xargs shasum -a 256</code>), and run <code>sh tools/vendor/verify</code>. One instance per thread: each solve makes its own context. <code>make -C tests/c</code> builds it standalone and checks two contexts in turn against each alone.</p>
 </div>
 </div>
 
