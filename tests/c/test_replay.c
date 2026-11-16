@@ -1,9 +1,14 @@
 /* Corpus cases replayed through src/core/ alone: the scheduler, every
- * solver and the reference evaluator for the model's blocks, compared bit
- * for bit with pmx_ode_solve()'s output (tests/c/replay/, written by
+ * solver and the reference evaluator for the model's blocks, compared with
+ * pmx_ode_solve()'s output (tests/c/replay/, written by
  * tools/make-c-replay.R; the R suite ties that output to rxode2 and
  * mrgsolve). The mutation job runs this binary, so a mutant that changes a
- * number in the core is caught here. Arguments: the case files; with
+ * number in the core is caught here.
+ *
+ * To 1e-12 relative, not bit for bit: the cases are written on one
+ * platform and replayed on every other, and the C library's exp(), log()
+ * and pow() differ between them in the last bit (platforms.yaml, Windows
+ * and macOS arm64, Stage 12). On one platform the replay is exact. Arguments: the case files; with
  * none, every file in ZPX_REPLAY_DIR (mull-runner passes none). */
 #define _POSIX_C_SOURCE 200809L
 #include <dirent.h>
@@ -52,7 +57,7 @@ static int expect(FILE *f, const char *word) {
   return fscanf(f, "%63s", w) == 1 && strcmp(w, word) == 0;
 }
 
-/* 0 when the case replays bit for bit; 1 when it differs; 2 when the
+/* 0 when the case replays within the tolerance; 1 when it differs; 2 when the
  * file cannot be read. */
 static int replay(const char *path) {
   FILE *f = fopen(path, "r");
@@ -126,11 +131,15 @@ static int replay(const char *path) {
   zpx_subject_result res;
   zpx_solve_subject(&bl, &o, rec, n, par, n, got, nobs, orow, 0, arena, size, &res);
   /* out holds time, the compartments and the outputs; the file holds them
-   * without the id. Both NaN, of any payload, is the same. */
+   * without the id. Both NaN, of any payload, is the same; infinities
+   * must match exactly. */
   int differ = res.error != 0;
   for (long k = 0; !differ && k < nobs * ncol; k++) {
     double a = got[k], b = want[k];
-    if (!(isnan(a) && isnan(b)) && memcmp(&a, &b, sizeof a) != 0) {
+    int same = (isnan(a) && isnan(b)) || a == b ||
+               (isfinite(a) && isfinite(b) &&
+                fabs(a - b) <= 1e-12 * fmax(fabs(a), fabs(b)));
+    if (!same) {
       fprintf(stderr, "FAIL: %s: row %ld column %ld: %.17g, want %.17g\n", name,
               k % nobs + 1, k / nobs + 1, a, b);
       differ = 1;
@@ -174,6 +183,6 @@ int main(int argc, char **argv) {
     fprintf(stderr, "FAIL: %d case files, expected at least 19\n", cases);
     failed = 1;
   }
-  if (!failed) printf("replay: ok (%d cases, bit for bit)\n", cases);
+  if (!failed) printf("replay: ok (%d cases, to 1e-12 relative)\n", cases);
   return failed;
 }

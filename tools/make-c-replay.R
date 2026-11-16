@@ -2,7 +2,8 @@
 # Writes tests/c/replay/<case>.txt: corpus cases replayed by
 # tests/c/test_replay.c through src/core/ alone (the scheduler, every
 # solver, the reference evaluator for the model's blocks), each compared
-# bit for bit with pmx_ode_solve()'s output. The R suite ties that output
+# with pmx_ode_solve()'s output to 1e-12 relative (the C library's maths
+# functions differ between platforms in the last bit). The R suite ties that output
 # to rxode2 and mrgsolve (tests/testthat/test-closed-form.R, test-ode.R,
 # test-expm.R), so a mutant of the C core that changes a number is caught
 # here, by the binary the mutation job runs (roadmap Stage 12).

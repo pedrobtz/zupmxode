@@ -48,7 +48,7 @@ until it is, and its release gates this package's submission.
 ## Commands
 
 - `make -C tests/c check`: the C core built and tested without R's
-  headers, with corpus cases replayed bit for bit (`tests/c/replay/`,
+  headers, with corpus cases replayed to 1e-12 relative (`tests/c/replay/`,
   from `Rscript tools/make-c-replay.R`; regenerate them when a solver's
   output changes on purpose). Part of the default loop once a stage touches `src/core/`.
 - `bash tools/ci/platform.sh <os>`: every per-OS check, as CI runs it.
