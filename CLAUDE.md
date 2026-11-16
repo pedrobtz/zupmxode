@@ -49,7 +49,11 @@ release gates this package’s submission.
 ## Commands
 
 - `make -C tests/c check`: the C core built and tested without R’s
-  headers. Part of the default loop once a stage touches `src/core/`.
+  headers, with corpus cases replayed to 1e-12 relative, 1e-8 for the
+  adaptive solvers (`tests/c/replay/`, from
+  `Rscript tools/make-c-replay.R`; regenerate them when a solver’s
+  output changes on purpose). Part of the default loop once a stage
+  touches `src/core/`.
 - `bash tools/ci/platform.sh <os>`: every per-OS check, as CI runs it.
 - `Rscript tools/make-corpus.R`: regenerates the oracle fixtures (about
   2 minutes; needs rxode2, mrgsolve and nlmixr2lib). Occasional: when
@@ -202,7 +206,7 @@ stages are 2, 6, 8 and the three closing ones.
 tree from that commit and is the only place it is changed;
 `tools/vendor/verify` (the `vendor` workflow) rebuilds it and compares
 byte for byte. The patches, all in that script (8 to 11 found by Stage
-6’s full run):
+6’s full run, 12 by Stage 12’s allocation-failure sweep):
 
 1.  No console output: `printf`/`fprintf(stderr, …)` become `LSODA_LOG`,
     which does nothing (the messages are in `ctx->error`).
@@ -230,6 +234,10 @@ byte for byte. The patches, all in that script (8 to 11 found by Stage
     Fortran `idamax_`, by pointer), so an `int` was read as an address.
     Every symbol is hidden too (`$(C_VISIBILITY)`), but
     `R_init_zupmxode`.
+12. `lsoda_prepare()` and `alloc_mem()` return 0 when their `calloc()`
+    or `malloc()` fails, before either writes through the pointer;
+    upstream dereferenced both unchecked, and `src/core/solve.c` raises
+    the failure as “cannot allocate LSODA’s workspace”.
 
 To change the pin or a patch: edit the script or `manifest.tsv`, run
 `sh tools/vendor/liblsoda.sh`, regenerate

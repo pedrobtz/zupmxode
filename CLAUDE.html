@@ -62,7 +62,7 @@
 <div class="section level2">
 <h2 id="commands">Commands<a class="anchor" aria-label="anchor" href="#commands"></a></h2>
 <ul><li>
-<code>make -C tests/c check</code>: the C core built and tested without R’s headers. Part of the default loop once a stage touches <code>src/core/</code>.</li>
+<code>make -C tests/c check</code>: the C core built and tested without R’s headers, with corpus cases replayed to 1e-12 relative, 1e-8 for the adaptive solvers (<code>tests/c/replay/</code>, from <code>Rscript tools/make-c-replay.R</code>; regenerate them when a solver’s output changes on purpose). Part of the default loop once a stage touches <code>src/core/</code>.</li>
 <li>
 <code>bash tools/ci/platform.sh &lt;os&gt;</code>: every per-OS check, as CI runs it.</li>
 <li>
@@ -128,7 +128,7 @@
 </div>
 <div class="section level2">
 <h2 id="vendored-native-code">Vendored native code<a class="anchor" aria-label="anchor" href="#vendored-native-code"></a></h2>
-<p><code>liblsoda</code> (<a href="https://github.com/sdwfrost/liblsoda" class="external-link uri">https://github.com/sdwfrost/liblsoda</a>, MIT), pinned at <code>16e49b428482e2efb552b0b4816a8ff8221e7efe</code> (upstream’s last commit, 2018), in <code>src/vendor/liblsoda/</code>. <code>tools/vendor/liblsoda.sh</code> makes the tree from that commit and is the only place it is changed; <code>tools/vendor/verify</code> (the <code>vendor</code> workflow) rebuilds it and compares byte for byte. The patches, all in that script (8 to 11 found by Stage 6’s full run):</p>
+<p><code>liblsoda</code> (<a href="https://github.com/sdwfrost/liblsoda" class="external-link uri">https://github.com/sdwfrost/liblsoda</a>, MIT), pinned at <code>16e49b428482e2efb552b0b4816a8ff8221e7efe</code> (upstream’s last commit, 2018), in <code>src/vendor/liblsoda/</code>. <code>tools/vendor/liblsoda.sh</code> makes the tree from that commit and is the only place it is changed; <code>tools/vendor/verify</code> (the <code>vendor</code> workflow) rebuilds it and compares byte for byte. The patches, all in that script (8 to 11 found by Stage 6’s full run, 12 by Stage 12’s allocation-failure sweep):</p>
 <ol style="list-style-type: decimal"><li>No console output: <code>printf</code>/<code>fprintf(stderr, …)</code> become <code>LSODA_LOG</code>, which does nothing (the messages are in <code>ctx-&gt;error</code>).</li>
 <li>Only the sources upstream’s Makefile builds (not <code>printcf.c</code>, nor the <code>#error</code> stub <code>ewset.c</code>).</li>
 <li>
@@ -146,6 +146,8 @@
 <li>
 <code>_strdup_printf()</code> has printf’s format attribute, so the compiler checks every message, measures into a one-byte buffer, not NULL, and returns NULL for a NULL format.</li>
 <li>The BLAS routines are <code>lsoda_daxpy</code> … <code>lsoda_idamax</code>: under the plain names the linker bound them to the BLAS R links (OpenBLAS’s Fortran <code>idamax_</code>, by pointer), so an <code>int</code> was read as an address. Every symbol is hidden too (<code>$(C_VISIBILITY)</code>), but <code>R_init_zupmxode</code>.</li>
+<li>
+<code>lsoda_prepare()</code> and <code>alloc_mem()</code> return 0 when their <code>calloc()</code> or <code>malloc()</code> fails, before either writes through the pointer; upstream dereferenced both unchecked, and <code>src/core/solve.c</code> raises the failure as “cannot allocate LSODA’s workspace”.</li>
 </ol><p>To change the pin or a patch: edit the script or <code>manifest.tsv</code>, run <code>sh tools/vendor/liblsoda.sh</code>, regenerate <code>tools/vendor/checksums.sha256</code> (<code>cd src/vendor &amp;&amp; find . -type f | LC_ALL=C sort | xargs shasum -a 256</code>), and run <code>sh tools/vendor/verify</code>. One instance per thread: each solve makes its own context. <code>make -C tests/c</code> builds it standalone and checks two contexts in turn against each alone.</p>
 </div>
 </div>

@@ -55,6 +55,9 @@
   article gives the benchmarks against rxode2 and mrgsolve and the tier
   each platform runs.
 
+- Running out of memory inside LSODA, or while MIR lowers a model, is an
+  R error naming the allocation, not a crash or a “bug” report.
+
 - [`pmx_ode_subjects()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subjects.md)
   prepares subjects once and
   [`pmx_ode_subject_eval()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subject_eval.md)
