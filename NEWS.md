@@ -23,3 +23,10 @@
 * `pmx_ode_method()` reports and sets a model's solver; `pmx_ode_info()`
   says what a model is, which solver it takes and why, its tier and how
   long it took to compile.
+
+* Subjects are solved in parallel with OpenMP; `pmx_ode_threads()` sets how
+  many threads, one by default. Results are the same, bit for bit, at any
+  thread count.
+
+* `pmx_ode_tier()` keeps a model's compartments, outputs and solver when it
+  makes the copy on another tier.

@@ -85,3 +85,15 @@ test_that("the C entries refuse what R's wrappers would not pass", {
   expect_error(.Call(zpx_model_eval, r$state$ptr, 2L, 0, c(1, 2), c(1, 2, 3),
                      double(3)), "no code")
 })
+
+test_that("pmx_ode_tier() keeps what the compiler recorded, and solves the same", {
+  m <- pmx_ode_model("d/dt(central) <- -k * central\ncp <- central / 10")
+  ev <- pmx_ode_events(amt = 100, cmt = 1L, time = c(1, 4))
+  for (tier in available_tiers()) {
+    m2 <- pmx_ode_tier(m, tier)
+    for (f in setdiff(names(m), c("state", "tier_request"))) {
+      expect_identical(m2[[f]], m[[f]], label = paste(tier, f))
+    }
+    expect_identical(pmx_ode_solve(m2, ev, c(k = 0.2)), pmx_ode_solve(m, ev, c(k = 0.2)))
+  }
+})

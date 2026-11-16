@@ -45,3 +45,82 @@ bad <- function(..., params = sched_params()) {
                       class = "pmx_ode_error_events")
   invisible(err)
 }
+
+# A population of n subjects, the same doses, each with its own weight,
+# for the parallel runtime's tests.
+population_events <- function(n, times = c(0.5, 2, 6, 12, 24, 36)) {
+  ev <- do.call(rbind, lapply(seq_len(n), function(i) {
+    e <- pmx_ode_events(amt = 100, ii = 12, addl = 2, cmt = 1L, time = times, id = i)
+    e$wt <- 50 + i
+    e
+  }))
+  ev
+}
+
+# Runs f with the thread count set to n, then restores it.
+with_threads <- function(n, f) {
+  old <- pmx_ode_threads(n)
+  on.exit(pmx_ode_threads(old))
+  f()
+}
+
+# Allocations R records while expr runs (test-alloc.R).
+profmem_count <- function(expr) {
+  path <- withr::local_tempfile()
+  utils::Rprofmem(path, threshold = 0)
+  force(expr)
+  utils::Rprofmem(NULL)
+  lines <- readLines(path, warn = FALSE)
+  length(lines)
+}
+
+# A model of each class, every one using a covariate (test-threads.R).
+thread_models <- function() {
+  list(
+    closed = pmx_ode_model("cl <- tcl * (wt / 70)^0.75\nv <- tv\nka <- tka\ncp <- linCmt()"),
+    linear = pmx_ode_model("d/dt(depot) <- -ka * depot\nd/dt(central) <- ka * depot - k * wt / 70 * central"),
+    general = pmx_ode_model("d/dt(depot) <- -ka * depot\nd/dt(central) <- ka * depot - vmax * central / (km + central) * wt / 70")
+  )
+}
+
+# Threads for the tests: 8, or 2 where CRAN's two-core limit applies.
+test_threads <- function() {
+  if (identical(Sys.getenv("NOT_CRAN"), "true")) 8L else 2L
+}
+
+# TRUE when two tables hold the same doubles, bit for bit (NA and NaN
+# included), else where they first differ.
+same_bits <- function(a, b) {
+  if (!identical(names(a), names(b)) || nrow(a) != nrow(b)) return("shape")
+  for (k in names(a)) {
+    if (!identical(writeBin(as.double(a[[k]]), raw()), writeBin(as.double(b[[k]]), raw()))) {
+      return(k)
+    }
+  }
+  TRUE
+}
+
+# A table's subjects copied k times, each copy with its own IDs.
+replicate_subjects <- function(events, k) {
+  id <- if ("ID" %in% names(events)) "ID" else if ("id" %in% names(events)) "id" else NULL
+  if (is.null(id)) {
+    events$ID <- 1L
+    id <- "ID"
+  }
+  ids <- unique(events[[id]])
+  do.call(rbind, lapply(seq_len(k), function(i) {
+    e <- events
+    e[[id]] <- match(e[[id]], ids) + (i - 1L) * length(ids)
+    e
+  }))
+}
+
+# expr's value and the messages of the warnings it raised, muffled.
+with_warnings <- function(expr) {
+  w <- character()
+  value <- withCallingHandlers(expr, warning = function(x) {
+    w[length(w) + 1L] <<- conditionMessage(x)
+    invokeRestart("muffleWarning")
+  })
+  list(value = value, warnings = w)
+}

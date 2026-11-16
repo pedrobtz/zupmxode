@@ -22,10 +22,9 @@ SEXP zpx_tiers(void);
 SEXP zpx_model_eval(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP zpx_ir_eval_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP zpx_math_r(SEXP, SEXP, SEXP);
+SEXP zpx_solve_all(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_omp_max(void);
 SEXP zpx_schedule_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-SEXP zpx_solve_closed(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-SEXP zpx_solve_general(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-SEXP zpx_solve_linear(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
   {"zupmxode_core_abi_r", (DL_FUNC) &zupmxode_core_abi_r, 0},
@@ -39,10 +38,9 @@ static const R_CallMethodDef call_methods[] = {
   {"zpx_model_eval", (DL_FUNC) &zpx_model_eval, 6},
   {"zpx_ir_eval_r", (DL_FUNC) &zpx_ir_eval_r, 7},
   {"zpx_math_r", (DL_FUNC) &zpx_math_r, 3},
+  {"zpx_solve_all", (DL_FUNC) &zpx_solve_all, 18},
+  {"zpx_omp_max", (DL_FUNC) &zpx_omp_max, 0},
   {"zpx_schedule_r", (DL_FUNC) &zpx_schedule_r, 14},
-  {"zpx_solve_closed", (DL_FUNC) &zpx_solve_closed, 17},
-  {"zpx_solve_general", (DL_FUNC) &zpx_solve_general, 17},
-  {"zpx_solve_linear", (DL_FUNC) &zpx_solve_linear, 16},
   {NULL, NULL, 0}
 };
 

@@ -125,5 +125,12 @@ pmx_ode_tier <- function(model, tier) {
     return(names(tier_codes)[.Call(zpx_model_tier, model_ptr(model))])
   }
   resolve_tier(tier, call = sys.call())
-  new_model(model$ir, tier)
+  # The copy keeps what the compiler recorded (states, class, options) and
+  # gets its own lowered code: model$state is an environment, shared by
+  # copies, so it is replaced, never written.
+  m <- model
+  m$tier_request <- tier
+  m$state <- new.env(parent = emptyenv())
+  model_lower(m, call = sys.call())
+  m
 }
