@@ -5,10 +5,15 @@
  * mrgsolve). The mutation job runs this binary, so a mutant that changes a
  * number in the core is caught here.
  *
- * To 1e-12 relative, not bit for bit: the cases are written on one
- * platform and replayed on every other, and the C library's exp(), log()
- * and pow() differ between them in the last bit (platforms.yaml, Windows
- * and macOS arm64, Stage 12). On one platform the replay is exact. Arguments: the case files; with
+ * Not bit for bit: the cases are written on one platform and replayed on
+ * every other, and the C library's exp(), log() and pow() differ between
+ * them in the last bit, as does the compiler's use of fused multiply-add
+ * (platforms.yaml, Windows and macOS arm64, Stage 12). The closed form and
+ * the matrix exponential carry that ulp through, so they are held to
+ * 1e-12 relative. LSODA and Dormand-Prince choose their steps from the
+ * values, so an ulp changes the steps and the result moves within the
+ * solver's error control (1e-9 seen on arm64); they are held to 1e-8, a
+ * hundredth of their rtol. On one platform the replay is exact. Arguments: the case files; with
  * none, every file in ZPX_REPLAY_DIR (mull-runner passes none). */
 #define _POSIX_C_SOURCE 200809L
 #include <dirent.h>
@@ -136,9 +141,9 @@ static int replay(const char *path) {
   int differ = res.error != 0;
   for (long k = 0; !differ && k < nobs * ncol; k++) {
     double a = got[k], b = want[k];
+    double rel = method == ZPX_M_LSODA || method == ZPX_M_DOPRI ? 1e-8 : 1e-12;
     int same = (isnan(a) && isnan(b)) || a == b ||
-               (isfinite(a) && isfinite(b) &&
-                fabs(a - b) <= 1e-12 * fmax(fabs(a), fabs(b)));
+               (isfinite(a) && isfinite(b) && fabs(a - b) <= rel * fmax(fabs(a), fabs(b)));
     if (!same) {
       fprintf(stderr, "FAIL: %s: row %ld column %ld: %.17g, want %.17g\n", name,
               k % nobs + 1, k / nobs + 1, a, b);
@@ -183,6 +188,6 @@ int main(int argc, char **argv) {
     fprintf(stderr, "FAIL: %d case files, expected at least 19\n", cases);
     failed = 1;
   }
-  if (!failed) printf("replay: ok (%d cases, to 1e-12 relative)\n", cases);
+  if (!failed) printf("replay: ok (%d cases; 1e-12 relative, 1e-8 for the adaptive solvers)\n", cases);
   return failed;
 }

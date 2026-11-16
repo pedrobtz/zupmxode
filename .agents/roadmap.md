@@ -640,7 +640,7 @@ sweep, run in a container before the workflow existed, found liblsoda's
 two unchecked allocations (vendor patch 12) and a memory failure in MIR
 reported as a bug (pedrobtz/zumir#111); its last run handled all 600
 positions. `tests/c/test_replay` gives the mutation job an oracle: corpus
-cases to 1e-12 relative. The coverage gap list gave #35, #36 and #37. The
+cases to 1e-12 relative (1e-8 for the adaptive solvers). The coverage gap list gave #35, #36 and #37. The
 mutation survivors are read once the workflow has run on `main`, in
 Stage 13.
 
