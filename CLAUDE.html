@@ -76,7 +76,9 @@
 <li>
 <code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>
 <li>
-<code>R/ir.R</code>: the IR assembler (tests now, the compiler from Stage 3); <code>R/model.R</code>: tiers, lowering, regeneration after <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> (D18).</li>
+<code>R/compile.R</code>: the compiler, R’s parse to IR text for the assembler: statements, names, <code>linCmt()</code>’s expansion, the classifier, and one generator for every block (DCE by statement, folding through the math table, CSE by value, <code>ivl</code> hoisting; <code>compile_model(opts =)</code> switches each off for the tests). <code>R/pmx_ode_model.R</code> is the export.</li>
+<li>
+<code>R/ir.R</code>: the IR assembler; <code>R/model.R</code>: tiers, lowering, regeneration after <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS()</a></code> (D18).</li>
 <li>
 <code>src/zupmxode.c</code>: registration only.</li>
 </ul></div>
@@ -100,6 +102,8 @@
 <code>helper-oracle.R</code>: reads fixtures and solves with rxode2. The generator sources it, so tests and fixtures solve the same way.</li>
 <li>
 <code>helper-models.R</code>: hand-built IR models, each with its answer written in R; <code>available_tiers()</code> lists the tiers this session runs.</li>
+<li>
+<code>helper-compile.R</code>: <code>run_blocks()</code> runs a compiled model’s blocks as the solvers will; <code>r_eval_model()</code> evaluates the same statements in R, the compiler’s oracle.</li>
 </ul><p><code>fixtures/math-reference.csv</code> is the math table’s oracle, from <code>tools/make-math-reference.R</code> (needs Rmpfr); <code>tests/fuzz/corpus/</code> the fuzz seeds, from <code>tools/make-fuzz-corpus.R</code>.</p>
 <p>The suite runs shuffled, top-level code included: build test data inside <code>test_that()</code> or in a helper, never at file level. Runtime: about 20 s locally, most of it rxode2 compiling three models.</p>
 </div>

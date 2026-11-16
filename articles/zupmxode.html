@@ -79,20 +79,26 @@ doses:</p>
 so existing rxode2 models run unchanged. It is compiled to native code
 in milliseconds, without a compiler.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_model</span><span class="op">(</span><span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_model.html">pmx_ode_model</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">ka</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tka</span> <span class="op">+</span> <span class="va">eta.ka</span><span class="op">)</span>; <span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tcl</span> <span class="op">+</span> <span class="va">eta.cl</span><span class="op">)</span>; <span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tv</span> <span class="op">+</span> <span class="va">eta.v</span><span class="op">)</span></span>
 <span>  <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">depot</span><span class="op">)</span>   <span class="op">&lt;-</span> <span class="op">-</span><span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span></span>
 <span>  <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">central</span><span class="op">)</span> <span class="op">&lt;-</span>  <span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span> <span class="op">-</span> <span class="va">cl</span> <span class="op">/</span> <span class="va">v</span> <span class="op">*</span> <span class="va">central</span></span>
 <span>  <span class="va">cp</span> <span class="op">&lt;-</span> <span class="va">central</span> <span class="op">/</span> <span class="va">v</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span><span class="fu">pmx_ode_info</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">m</span></span>
+<span><span class="co">#&gt; &lt;pmx_ode_model&gt; linear, 2 compartments on the native tier</span></span>
+<span><span class="co">#&gt;   compartments: depot, central</span></span>
+<span><span class="co">#&gt;   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v</span></span>
+<span><span class="co">#&gt;   outputs:      ka, cl, v, cp</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">pmx_ode_info</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="solve-one-subject">Solve one subject<a class="anchor" aria-label="anchor" href="#solve-one-subject"></a>
 </h2>
 <p><code>pmx_ode_solve()</code> is the deterministic core: parameters
 in, predictions out, with no random draws.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_solve</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                                        eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -103,7 +109,7 @@ in, predictions out, with no random draws.</p>
 <p>Between-subject variability and residual error are drawn in R with
 R’s random number generator, and the C engine stays deterministic. The
 same seed gives the same result at any thread count.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pmx_ode_threads</span><span class="op">(</span><span class="fl">8</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_sim</span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
@@ -117,7 +123,7 @@ same seed gives the same result at any thread count.</p>
 matrix exponential, or a general ODE solver), and the tier is native
 code unless the platform cannot run it. <code>pmx_ode_info()</code> says
 which was chosen, and both can be overridden.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pmx_ode_method</span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span></span></code></pre></div>
 </div>

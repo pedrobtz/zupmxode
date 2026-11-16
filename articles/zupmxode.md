@@ -31,6 +31,15 @@ m <- pmx_ode_model({
   d/dt(central) <-  ka * depot - cl / v * central
   cp <- central / v
 })
+m
+#> <pmx_ode_model> linear, 2 compartments on the native tier
+#>   compartments: depot, central
+#>   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v
+#>   outputs:      ka, cl, v, cp
+```
+
+``` r
+
 pmx_ode_info(m)
 ```
 
