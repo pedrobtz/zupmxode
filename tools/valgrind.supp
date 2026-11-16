@@ -32,3 +32,29 @@
    fun:pthread_create*
    obj:*/cli/libs/cli.so
 }
+
+# The thread stacks of libgomp's pool (Stage 8's parallel runtime) and
+# OpenBLAS's: both keep their threads until R exits, so the threads' TLS
+# blocks are "possibly lost" at exit. Not ours to free, and not a leak.
+{
+   libgomp-thread-pool-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   obj:*/libgomp.so*
+}
+{
+   openblas-thread-pool-tls
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   fun:_dl_allocate_tls
+   ...
+   fun:pthread_create*
+   fun:blas_thread_init
+}
