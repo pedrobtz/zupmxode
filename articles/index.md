@@ -1,9 +1,9 @@
 # Articles
 
-### All vignettes
+### Concepts
 
-- [Get started with
-  zupmxode](https://pedrobtz.github.io/zupmxode/articles/zupmxode.md):
+- [Performance and
+  platforms](https://pedrobtz.github.io/zupmxode/articles/performance.md):
 
-  Compile a PK model, solve one subject, simulate a population, and pick
-  the solver and tier.
+  How fast zupmxode compiles and solves against rxode2 and mrgsolve, and
+  which tier runs where.

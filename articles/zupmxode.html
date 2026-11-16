@@ -11,8 +11,8 @@
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Get started with zupmxode">
-<meta name="description" content="Compile a PK model, solve one subject, simulate a population, and pick the solver and tier.">
-<meta property="og:description" content="Compile a PK model, solve one subject, simulate a population, and pick the solver and tier.">
+<meta name="description" content="Compile a PK model, solve one subject, simulate a population, evaluate a subject for an estimator, and pick the solver and tier.">
+<meta property="og:description" content="Compile a PK model, solve one subject, simulate a population, evaluate a subject for an estimator, and pick the solver and tier.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,6 +33,12 @@
       <ul class="navbar-nav me-auto">
 <li class="active nav-item"><a class="nav-link" href="../articles/zupmxode.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/performance.html">Performance and platforms</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -64,21 +70,22 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pedrobtz.github.io/zupmxode/">zupmxode</a></span><span class="op">)</span></span></code></pre></div>
-<p>rxode2 and mrgsolve compile every model with the system C compiler,
-which locked-down and validated machines often lack. zupmxode runs the
-same models with nothing but R. This page compiles a one-compartment
-model with first-order absorption, and gives it a week of daily 100 mg
-doses:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_events.html">pmx_ode_events</a></span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
-<span>                      time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">168</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>We take one model from text to a simulated population: compile it,
+give it a week of doses, solve it for one subject, simulate a hundred,
+and evaluate one subject the way an estimator does. By the end you will
+know the package’s four objects (a model, an event table, a solution and
+a prepared subject) and the functions that make them. How fast this is,
+and where it runs, is left to the <a href="https://pedrobtz.github.io/zupmxode/articles/performance.html">Performance
+and platforms</a> article.</p>
 <div class="section level2">
 <h2 id="compile-a-model">Compile a model<a class="anchor" aria-label="anchor" href="#compile-a-model"></a>
 </h2>
-<p>The model is written in rxode2’s syntax and read by R’s own parser,
-so existing rxode2 models run unchanged. It is compiled to native code
-in milliseconds, without a compiler.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>A <strong>model</strong> is written in rxode2’s syntax and read by
+R’s own parser, so an rxode2 model in the supported subset runs
+unchanged. This one has a depot, a central compartment, and three
+parameters with a random effect each. Compiling it takes milliseconds
+and no C compiler.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_model.html">pmx_ode_model</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">ka</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tka</span> <span class="op">+</span> <span class="va">eta.ka</span><span class="op">)</span>; <span class="va">cl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tcl</span> <span class="op">+</span> <span class="va">eta.cl</span><span class="op">)</span>; <span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">tv</span> <span class="op">+</span> <span class="va">eta.v</span><span class="op">)</span></span>
 <span>  <span class="va">d</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="va">depot</span><span class="op">)</span>   <span class="op">&lt;-</span> <span class="op">-</span><span class="va">ka</span> <span class="op">*</span> <span class="va">depot</span></span>
@@ -90,42 +97,71 @@ in milliseconds, without a compiler.</p>
 <span><span class="co">#&gt;   compartments: depot, central</span></span>
 <span><span class="co">#&gt;   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v</span></span>
 <span><span class="co">#&gt;   outputs:      ka, cl, v, cp</span></span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/pmx_ode_info.html">pmx_ode_info()</a></code> says what the compiler found: the
+compartments, the parameters, which solver the model takes and why, and
+its tier.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pmx_ode_info.html">pmx_ode_info</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;pmx_ode_info&gt;</span></span>
 <span><span class="co">#&gt;   class:        linear</span></span>
 <span><span class="co">#&gt;   solver:       expm (linear in its compartments, with coefficients constant between events (2 of at most 20 compartments))</span></span>
-<span><span class="co">#&gt;   tier:         native, lowered in 0.0 ms</span></span>
+<span><span class="co">#&gt;   tier:         native, lowered in 1.0 ms</span></span>
 <span><span class="co">#&gt;   compartments: depot, central</span></span>
 <span><span class="co">#&gt;   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v</span></span>
 <span><span class="co">#&gt;   outputs:      ka, cl, v, cp</span></span>
 <span><span class="co">#&gt;   instructions: pre 12, ivl 15, rhs 13, post 9, err 0</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="describe-the-doses">Describe the doses<a class="anchor" aria-label="anchor" href="#describe-the-doses"></a>
+</h2>
+<p>An <strong>event table</strong> holds NONMEM-style records: doses,
+and the times to report. Here it is a week of daily 100 mg doses into
+the depot, observed every hour. A data frame with NONMEM’s columns
+(<code>ID</code>, <code>TIME</code>, <code>AMT</code>, <code>CMT</code>,
+<code>EVID</code>, <code>MDV</code> and the rest) works the same
+way.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_events.html">pmx_ode_events</a></span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
+<span>                      time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">168</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">ev</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   ID TIME EVID AMT   CMT RATE DUR II ADDL SS</span></span>
+<span><span class="co">#&gt; 1  1    0    1 100 depot    0   0 24    6  0</span></span>
+<span><span class="co">#&gt; 2  1    0    0   0 depot    0   0  0    0  0</span></span>
+<span><span class="co">#&gt; 3  1    1    0   0 depot    0   0  0    0  0</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="solve-one-subject">Solve one subject<a class="anchor" aria-label="anchor" href="#solve-one-subject"></a>
 </h2>
-<p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> is the deterministic core: parameters
-in, predictions out, with no random draws.</p>
+<p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> is the deterministic core: every
+parameter in, the compartments and outputs at each observation out, with
+no random draws. Look for <code>cp</code> rising after each dose and
+settling into a daily cycle.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_solve.html">pmx_ode_solve</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>                                        eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id time        depot  central       ka       cl        v       cp</span></span>
-<span><span class="co">#&gt; 1  1    0 100.00000000  0.00000 1.648721 2.718282 20.08554 0.000000</span></span>
-<span><span class="co">#&gt; 2  1    1  19.22956455 74.20375 1.648721 2.718282 20.08554 3.694387</span></span>
-<span><span class="co">#&gt; 3  1    2   3.69776153 79.08032 1.648721 2.718282 20.08554 3.937177</span></span>
-<span><span class="co">#&gt; 4  1    3   0.71106344 71.81445 1.648721 2.718282 20.08554 3.575431</span></span>
-<span><span class="co">#&gt; 5  1    4   0.13673440 63.25203 1.648721 2.718282 20.08554 3.149133</span></span>
-<span><span class="co">#&gt; 6  1    5   0.02629343 55.34724 1.648721 2.718282 20.08554 2.755577</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>, eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>, eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_solve.html">pmx_ode_solve</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="va">p</span><span class="op">)</span></span>
+<span><span class="va">out</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">25</span>, <span class="fl">26</span>, <span class="fl">169</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="co">#&gt;     id time        depot   central       ka       cl        v        cp</span></span>
+<span><span class="co">#&gt; 1    1    0 1.000000e+02  0.000000 1.648721 2.718282 20.08554 0.0000000</span></span>
+<span><span class="co">#&gt; 2    1    1 1.922956e+01 74.203752 1.648721 2.718282 20.08554 3.6943873</span></span>
+<span><span class="co">#&gt; 25   1   24 1.000000e+02  4.232420 1.648721 2.718282 20.08554 0.2107198</span></span>
+<span><span class="co">#&gt; 26   1   25 1.922956e+01 77.900445 1.648721 2.718282 20.08554 3.8784348</span></span>
+<span><span class="co">#&gt; 169  1  168 6.535319e-16  4.403496 1.648721 2.718282 20.08554 0.2192371</span></span></code></pre></div>
+<p>The mistake new users make most is to leave a parameter out. The
+error names it rather than solving with a default:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/pmx_ode_solve.html">pmx_ode_solve</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> No value for the model's parameters `eta.ka`, `eta.cl`, `eta.v`.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="simulate-a-population-reproducibly">Simulate a population, reproducibly<a class="anchor" aria-label="anchor" href="#simulate-a-population-reproducibly"></a>
 </h2>
-<p>Between-subject variability and residual error are drawn in R with
-R’s random number generator, and the C engine stays deterministic. The
-same seed gives the same result at any thread count.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/pmx_ode_sim.html">pmx_ode_sim()</a></code> draws each subject’s etas from
+<code>omega</code> and adds residual error to the outputs
+<code>sigma</code> names. Every draw is made in R with R’s random number
+generator, so the same seed gives the same result at any number of
+threads.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">old</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_threads.html">pmx_ode_threads</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_sim.html">pmx_ode_sim</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
@@ -147,13 +183,39 @@ error comes from <code><a href="../reference/add.html">add()</a></code>, <code><
 with error sits next to the prediction as <code>cp_obs</code>.</p>
 </div>
 <div class="section level2">
+<h2 id="evaluate-one-subject-for-an-estimator">Evaluate one subject for an estimator<a class="anchor" aria-label="anchor" href="#evaluate-one-subject-for-an-estimator"></a>
+</h2>
+<p>An estimator tries thousands of parameter vectors on the same data.
+It prepares the subjects once with <code><a href="../reference/pmx_ode_subjects.html">pmx_ode_subjects()</a></code>,
+which splits the model’s parameters into theta and eta, and then asks
+<code><a href="../reference/pmx_ode_subject_eval.html">pmx_ode_subject_eval()</a></code> for one <strong>prepared
+subject’s</strong> predictions and residual variances at each
+vector.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">subs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_subjects.html">pmx_ode_subjects</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">subs</span>, <span class="st">"eta"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "eta.ka" "eta.cl" "eta.v"</span></span>
+<span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_subject_eval.html">pmx_ode_subject_eval</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">subs</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span>, theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>                          eta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0.2</span>, eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>                          sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>cp <span class="op">=</span> <span class="fu"><a href="../reference/add.html">prop</a></span><span class="op">(</span><span class="fl">0.1</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>time <span class="op">=</span> <span class="va">r</span><span class="op">$</span><span class="va">time</span>, pred <span class="op">=</span> <span class="va">r</span><span class="op">$</span><span class="va">pred</span>, var <span class="op">=</span> <span class="va">r</span><span class="op">$</span><span class="va">var</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;      time     pred       var</span></span>
+<span><span class="co">#&gt; [1,]    0 0.000000 0.0000000</span></span>
+<span><span class="co">#&gt; [2,]    1 3.626342 0.1315036</span></span>
+<span><span class="co">#&gt; [3,]    2 3.771163 0.1422167</span></span></code></pre></div>
+<p>The predictions are the doubles <code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> gives
+for the same parameters. The same call exists in C, for estimators
+written there, through the header
+<code>inst/include/zupmxode.h</code>.</p>
+</div>
+<div class="section level2">
 <h2 id="choose-the-solver-and-the-tier">Choose the solver and the tier<a class="anchor" aria-label="anchor" href="#choose-the-solver-and-the-tier"></a>
 </h2>
 <p>The solver is the most specific one the model allows (closed form,
 matrix exponential, or a general ODE solver), and the tier is native
-code unless the platform cannot run it. <code><a href="../reference/pmx_ode_info.html">pmx_ode_info()</a></code> says
-which was chosen, and both can be overridden.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+code unless the platform cannot run it. Both can be overridden; each
+override returns a new model and leaves <code>m</code> as it was.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/pmx_ode_method.html">pmx_ode_method</a></span><span class="op">(</span><span class="fu"><a href="../reference/pmx_ode_method.html">pmx_ode_method</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "lsoda"</span></span>
 <span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span><span class="op">)</span></span>
@@ -162,7 +224,20 @@ which was chosen, and both can be overridden.</p>
 <div class="section level2">
 <h2 id="where-next">Where next<a class="anchor" aria-label="anchor" href="#where-next"></a>
 </h2>
-<p>Every function is listed in the <a href="https://pedrobtz.github.io/zupmxode/reference/index.html">reference</a>.</p>
+<ul>
+<li>
+<a href="https://pedrobtz.github.io/zupmxode/articles/performance.html">Performance
+and platforms</a>: how these calls compare with rxode2 and mrgsolve, and
+which tier runs where.</li>
+<li>
+<code><a href="../reference/pmx_ode_model.html">?pmx_ode_model</a></code>: the subset of rxode2’s language a model
+may use.</li>
+<li>
+<code><a href="../reference/pmx_ode_events.html">?pmx_ode_events</a></code>: every column of an event table and how
+it is read.</li>
+<li>The <a href="https://pedrobtz.github.io/zupmxode/reference/index.html">reference</a>
+lists every function.</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

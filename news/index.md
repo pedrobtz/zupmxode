@@ -51,6 +51,10 @@
   [`set.seed()`](https://rdrr.io/r/base/Random.html) makes a simulation
   reproducible at any thread count.
 
+- The README says what the package is, and a Performance and platforms
+  article gives the benchmarks against rxode2 and mrgsolve and the tier
+  each platform runs.
+
 - [`pmx_ode_subjects()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subjects.md)
   prepares subjects once and
   [`pmx_ode_subject_eval()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_subject_eval.md)
