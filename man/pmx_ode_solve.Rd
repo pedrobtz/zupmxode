@@ -32,7 +32,16 @@ deterministic core that the population simulation builds on.
 
 \code{pmx_ode_error_events} for a record that breaks a rule of the event
 table, naming the row; \code{pmx_ode_error_argument} for a parameter with no
-value; \code{pmx_ode_error_solver} when a model's class has no solver yet.
+value; \code{pmx_ode_error_solver} for a closed-form model whose rate
+constants are not positive.
+}
+
+\section{Warnings}{
+
+\code{pmx_ode_warning_solver} when the solver fails for a subject: that
+subject's outputs are \code{NA} from where it failed, and the others are
+solved (design §8). \code{pmx_ode_warning_steady_state} when a steady state
+of a model with no closed form does not converge.
 }
 
 \examples{

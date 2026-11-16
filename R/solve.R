@@ -5,13 +5,58 @@
 # The solvers, by name, as zpx_solve_general() numbers them.
 solver_codes <- c(lsoda = 1L, dopri5 = 2L)
 
-# Options the solve takes from the model, for the tests and, from Stage 7,
-# pmx_ode_method(): the general solver and its tolerances (design §6.3),
-# and steady state's convergence tolerance and cap (iterations).
+# The solvers a model can take, most specific first (design §4.3, D6).
+solver_methods <- c("closed", "expm", "lsoda", "dopri5")
+
+# The linear solver's state limit: above it, a linear model goes to LSODA
+# (design §4.3, "about 20"; fixed at 20 in Stage 7).
+linear_max_states <- 20L
+
+# Options the solve takes from the model: the method (pmx_ode_method()),
+# the general solvers' tolerances (design §6.3), and steady state's
+# convergence tolerance and cap (iterations).
 solve_options <- function(model) {
-  o <- list(method = "lsoda", rtol = 1e-6, atol = 1e-8, ss_tol = 1e-8, ss_cap = 1000)
+  o <- list(method = "auto", rtol = 1e-6, atol = 1e-8, ss_tol = 1e-8, ss_cap = 1000)
   o[names(model$solve_opts)] <- model$solve_opts
+  # The tests' old switch for the closed form's ODE twin.
+  if (isFALSE(o$closed) && identical(o$method, "auto")) o$method <- "lsoda"
   o
+}
+
+# The solver `auto` chooses for a model, and why.
+auto_method <- function(model) {
+  ny <- length(model$states)
+  if (model$class == "closed-form") {
+    return(list(method = "closed", reason = "a linCmt() model with no other derivative"))
+  }
+  if (model$class == "linear" && ny <= linear_max_states) {
+    return(list(method = "expm", reason = paste0(
+      "linear in its compartments, with coefficients constant between events (",
+      ny, " of at most ", linear_max_states, " compartments)")))
+  }
+  if (model$class == "linear") {
+    return(list(method = "lsoda", reason = paste0(
+      "linear, but ", ny, " compartments is above the matrix exponential's ",
+      linear_max_states)))
+  }
+  list(method = "lsoda", reason = "no closed form and not linear in its compartments")
+}
+
+# The solver for one subject: the model's method, or auto's choice; a
+# compartment switched off takes auto from the closed form or the matrix
+# exponential to LSODA, which supports it.
+subject_method <- function(model, opts, rec) {
+  off <- any(rec$evid == 2L & rec$cmt < 0L)
+  if (!identical(opts$method, "auto")) {
+    if (off && opts$method %in% c("closed", "expm")) {
+      pmx_abort("pmx_ode_error_solver", paste0(
+        "The ", opts$method, " solver does not support a compartment switched off ",
+        "(EVID 2 with a negative CMT); use \"lsoda\" or \"dopri5\"."))
+    }
+    return(opts$method)
+  }
+  m <- auto_method(model)$method
+  if (off && m %in% c("closed", "expm")) "lsoda" else m
 }
 
 #' Solve a model for one or more subjects
@@ -60,18 +105,17 @@ pmx_ode_solve <- function(model, events, params = double()) {
   }
   rec <- as_records(events, model)
   opts <- solve_options(model)
-  closed <- model$class == "closed-form" && identical(model$solve_opts$closed, NULL) ||
-    isTRUE(model$solve_opts$closed)
   ids <- unique(rec$id)
   parts <- lapply(ids, function(id) {
     keep <- rec$id == id
     one <- lapply(rec[setdiff(names(rec), "covariates")], function(x) x[keep])
     one$covariates <- rec$covariates[keep, , drop = FALSE]
     rows <- which(keep)
-    res <- solve_one(model, one, params, closed, opts)
+    method <- subject_method(model, opts, one)
+    res <- solve_one(model, one, params, method, opts)
     if (!is.null(res$failed_row) && res$failed_row >= 0) {
       pmx_warn("pmx_ode_warning_solver", paste0(
-        "The ", opts$method, " solver failed for subject ", id, " at time ",
+        "The ", method, " solver failed for subject ", id, " at time ",
         format(res$failed_at), "; its outputs are NA from there."
       ), id = id, time = res$failed_at)
     }
@@ -110,7 +154,7 @@ lincmt_spec <- function(model) {
   as.integer(c(lc$ncmt, lc$depot, lc$micro, vapply(keys, function(k) at(p[[k]]), 0L)))
 }
 
-solve_one <- function(model, rec, params, closed, opts) {
+solve_one <- function(model, rec, params, method, opts) {
   par <- record_params(model, rec, params)
   ny <- length(model$states)
   n <- length(rec$time)
@@ -124,7 +168,12 @@ solve_one <- function(model, rec, params, closed, opts) {
       if (rec$evid[i] %in% c(1L, 4L) && c >= 1L && c <= ny) pre[i, ] <- out[c, 1:4]
     }
   }
-  if (closed) {
+  if (method == "expm") {
+    return(.Call(zpx_solve_linear, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
+                 rec$rate, rec$dur, rec$ii, rec$addl, rec$ss, pre[, 1], pre[, 2], pre[, 3],
+                 pre[, 4], as.double(par), as.double(init)))
+  }
+  if (method == "closed") {
     return(.Call(zpx_solve_closed, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
                  rec$rate, rec$dur, rec$ii, rec$addl, rec$ss, pre[, 1], pre[, 2], pre[, 3],
                  pre[, 4], as.double(par), lincmt_spec(model), as.double(init)))
@@ -132,5 +181,5 @@ solve_one <- function(model, rec, params, closed, opts) {
   .Call(zpx_solve_general, model_ptr(model), rec$time, rec$evid, rec$amt, rec$cmt,
         rec$rate, rec$dur, rec$ii, rec$addl, rec$ss, pre[, 1], pre[, 2], pre[, 3],
         pre[, 4], as.double(par), as.double(init),
-        c(solver_codes[[opts$method]], opts$rtol, opts$atol, opts$ss_tol, opts$ss_cap))
+        c(solver_codes[[method]], opts$rtol, opts$atol, opts$ss_tol, opts$ss_cap))
 }

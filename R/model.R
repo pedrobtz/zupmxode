@@ -50,7 +50,9 @@ new_model <- function(ir, tier = "auto") {
 # back to the interpreter with a warning (design §8).
 model_lower <- function(m, call = NULL) {
   tier <- resolve_tier(m$tier_request, call)
+  started <- proc.time()[["elapsed"]]
   res <- .Call(zpx_model_new, m$ir$code, m$ir$consts, tier_codes[[tier]])
+  m$state$lowering_seconds <- proc.time()[["elapsed"]] - started
   if (is.list(res) && res$status == "lowering" && tier == "native" &&
         m$tier_request == "auto" && zupmxode_tiers()[["interp"]]) {
     pmx_warn("pmx_ode_warning_tier_fallback",

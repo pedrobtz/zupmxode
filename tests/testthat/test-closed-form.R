@@ -110,9 +110,11 @@ test_that("the solver refuses what it cannot solve, naming why", {
                exp(-1), tolerance = 1e-5)
   expect_error(pmx_ode_solve(lin, pmx_ode_events(amt = 1, time = 1), c(tcl = -1, tv = 1)),
                class = "pmx_ode_error_solver")
-  # A compartment switched off is the general solvers' (D21).
+  # A compartment switched off is the general solvers' (D21): auto takes
+  # the subject to LSODA, and the closed form, forced, refuses it.
   off <- data.frame(TIME = 0:1, EVID = c(1, 2), AMT = c(1, 0), CMT = c(1, -1))
-  expect_error(pmx_ode_solve(lin, off, c(tcl = 1, tv = 1)), class = "pmx_ode_error_solver")
+  expect_error(pmx_ode_solve(pmx_ode_method(lin, "closed"), off, c(tcl = 1, tv = 1)),
+               class = "pmx_ode_error_solver")
   expect_error(pmx_ode_solve(lin, pmx_ode_events(amt = 1, time = 1), c(tcl = 1)),
                class = "pmx_ode_error_argument")
   expect_error(pmx_ode_solve(lin, pmx_ode_events(amt = 1, time = 1), 1),

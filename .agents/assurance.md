@@ -75,7 +75,7 @@ One row per boundary the package crosses. An oracle knows the answer:
 | closed-form solutions            | 200-bit superposition over 1,000 doses                         | tests/testthat/test-closed-form.R |
 | LSODA and Dormand–Prince         | rxode2 and mrgsolve; closed form on linear models              | tests/testthat/test-ode.R |
 | LSODA, vendored                  | two contexts in turn against each alone, and the exact solution | tests/c/test_lsoda.c |
-| matrix exponential               | LSODA at tight tolerance; closed form where one exists         | gap #9     |
+| matrix exponential               | LSODA at tight tolerance; closed form where one exists         | tests/testthat/test-expm.R |
 | C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects               | gap #12    |
 <!-- markdownlint-enable MD013 -->
 
@@ -101,7 +101,7 @@ One row per limit the package enforces. "Straddled by" is the test of
 
 | Limit                         | Unit       | Straddled by |
 | ----------------------------- | ---------- | ------------ |
-| matrix-exponential state cap  | states     | gap #9       |
+| matrix-exponential state cap  | states     | tests/testthat/test-expm.R |
 | general steady-state cap      | iterations | tests/testthat/test-steady-state.R |
 | IR instructions per block     | instructions | tests/testthat/test-ir-verify.R |
 | IR registers per block        | registers  | tests/testthat/test-ir-verify.R |
