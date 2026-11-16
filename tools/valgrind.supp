@@ -1,5 +1,7 @@
 # Valgrind suppressions for valgrind.yaml (native-checks.yaml). Each one is
-# not zupmxode's, says whose it is, and is as narrow as the stack allows.
+# not zupmxode's memory (libgomp's pool, below, is the runtime's threads,
+# not its allocations), says whose it is, and is as narrow as the stack
+# allows.
 
 # data.table, which rxode2 (Suggests) loads, starts OpenMP threads whose
 # thread-local storage is still allocated when R exits; memcheck counts it
@@ -46,6 +48,8 @@
    ...
    fun:pthread_create*
    obj:*/libgomp.so*
+   fun:GOMP_parallel
+   fun:zpx_solve_all
 }
 {
    openblas-thread-pool-tls
