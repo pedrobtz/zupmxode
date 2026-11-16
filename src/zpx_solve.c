@@ -1,0 +1,193 @@
+/* The closed-form solve of one subject (design §4.3, §4.5, D21): the
+ * scheduler's timeline walked with the state carried exactly between its
+ * entries (src/core/linear.c), the model's ivl and post blocks giving the
+ * rate constants and the outputs. */
+#define R_NO_REMAP
+#include <R.h>
+#include <Rinternals.h>
+
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "core/linear.h"
+#include "core/sched.h"
+#include "zpx_model.h"
+
+static SEXP fail(const char *kind, const char *message, int row) {
+  const char *names[] = {"error", "message", "row", ""};
+  SEXP res = PROTECT(Rf_mkNamed(VECSXP, names));
+  SET_VECTOR_ELT(res, 0, Rf_mkString(kind));
+  SET_VECTOR_ELT(res, 1, Rf_mkString(message));
+  SET_VECTOR_ELT(res, 2, Rf_ScalarInteger(row));
+  UNPROTECT(1);
+  return res;
+}
+
+/* The rate constants from the captures, by the indices R passes:
+ * lc = c(ncmt, depot, micro, then 7 capture indices, -1 for none) for
+ * ka and either (cl, v, q, vp, q2, vp2) or (k, v, k12, k21, k13, k31). */
+static int rate_constants(const int *lc, const double *cap, double *ka, double *k10,
+                          double *k12, double *k21, double *k13, double *k31) {
+  int ncmt = lc[0], micro = lc[2];
+  const int *ix = lc + 3;
+#define CAP(j) (ix[j] >= 0 ? cap[ix[j]] : NAN)
+  *ka = CAP(0);
+  if (micro) {
+    *k10 = CAP(1);
+    *k12 = CAP(3);
+    *k21 = CAP(4);
+    *k13 = CAP(5);
+    *k31 = CAP(6);
+  } else {
+    double cl = CAP(1), v = CAP(2);
+    *k10 = cl / v;
+    *k12 = ncmt >= 2 ? CAP(3) / v : 0;
+    *k21 = ncmt >= 2 ? CAP(3) / CAP(4) : 0;
+    *k13 = ncmt >= 3 ? CAP(5) / v : 0;
+    *k31 = ncmt >= 3 ? CAP(5) / CAP(6) : 0;
+  }
+#undef CAP
+  return ncmt;
+}
+
+/* x: the model; records as zpx_schedule_r takes them; par: nrec x npar
+ * (column-major) parameters at each record; lc: see rate_constants(). */
+SEXP zpx_solve_closed(SEXP x, SEXP time, SEXP evid, SEXP amt, SEXP cmt, SEXP rate, SEXP dur,
+                      SEXP ii, SEXP addl, SEXP ss, SEXP lag, SEXP f, SEXP mrate, SEXP mdur,
+                      SEXP par, SEXP s_lc, SEXP init) {
+  zpx_model *m = zpx_model_get(x);
+  if (m == NULL) Rf_error("the model has no code: it was saved and not restored");
+  int n = (int) XLENGTH(time);
+  int ny = m->dims.ny, npar = m->dims.npar, nwork = m->dims.nwork;
+  int ncap = m->dims.block[ZPX_POST].nout;
+  if (TYPEOF(par) != REALSXP || XLENGTH(par) != (R_xlen_t) n * npar) Rf_error("bad parameters");
+  if (TYPEOF(s_lc) != INTSXP || XLENGTH(s_lc) != 10) Rf_error("bad linCmt spec");
+  if (TYPEOF(init) != REALSXP || XLENGTH(init) != ny) Rf_error("bad initial amounts");
+  const int *lc = INTEGER(s_lc);
+  if (lc[0] + lc[1] != ny) Rf_error("the model is not a closed form of its compartments");
+
+  zpx_record *rec = (zpx_record *) R_alloc((size_t) n + 1, sizeof(zpx_record));
+  for (int i = 0; i < n; i++) {
+    rec[i].time = REAL(time)[i];
+    rec[i].amt = REAL(amt)[i];
+    rec[i].rate = REAL(rate)[i];
+    rec[i].dur = REAL(dur)[i];
+    rec[i].ii = REAL(ii)[i];
+    rec[i].lag = REAL(lag)[i];
+    rec[i].f = REAL(f)[i];
+    rec[i].mrate = REAL(mrate)[i];
+    rec[i].mdur = REAL(mdur)[i];
+    rec[i].evid = INTEGER(evid)[i];
+    rec[i].cmt = INTEGER(cmt)[i];
+    rec[i].addl = INTEGER(addl)[i];
+    rec[i].ss = INTEGER(ss)[i];
+  }
+  int error, where;
+  long count = zpx_sched_count(rec, n, ny, &error, &where);
+  if (count < 0) return fail("events", zpx_sched_error_message(error), where);
+  zpx_entry *ent = (zpx_entry *) R_alloc((size_t) count + 1, sizeof(zpx_entry));
+  count = zpx_sched_build(rec, n, ny, ent, &error, &where);
+  if (count < 0) return fail("events", zpx_sched_error_message(error), where);
+
+  long nobs = 0, nlink = 0;
+  for (long i = 0; i < count; i++) {
+    if (ent[i].kind == ZPX_E_OBS) nobs++;
+    if (ent[i].link + 1 > nlink) nlink = ent[i].link + 1;
+    if (ent[i].kind == ZPX_E_OFF) return fail("solver", "a compartment switched off (EVID 2 with a negative CMT) is not supported by the closed-form solver", ent[i].rec);
+  }
+  SEXP out = PROTECT(Rf_allocMatrix(REALSXP, (int) nobs, 1 + ny + ncap));
+  SEXP orow = PROTECT(Rf_allocVector(INTSXP, (R_xlen_t) nobs));
+  double *o = REAL(out);
+  double *work = (double *) R_alloc((size_t) nwork + 1, sizeof(double));
+  double *cap = (double *) R_alloc((size_t) ncap + 1, sizeof(double));
+  double *active = (double *) R_alloc((size_t) nlink + 1, sizeof(double));
+  double *pcur = (double *) R_alloc((size_t) npar + 1, sizeof(double));
+  double y[ZPX_LIN_MAX] = {0}, r[ZPX_LIN_MAX] = {0}, zero[ZPX_LIN_MAX] = {0};
+  for (long l = 0; l < nlink; l++) active[l] = 0;
+  zpx_lin L;
+  int cur = -1;
+  double t = count > 0 ? ent[0].time : 0;
+  memcpy(y, REAL(init), sizeof(double) * (size_t) ny);
+
+  /* Parameters, work and rate constants at record i. */
+#define SET_RECORD(i)                                                                 \
+  do {                                                                                \
+    cur = (i);                                                                        \
+    for (int p = 0; p < npar; p++) pcur[p] = REAL(par)[(R_xlen_t) p * n + cur];        \
+    m->lowered.fn[ZPX_IVL](t, zero, work, pcur, work);                                \
+    m->lowered.fn[ZPX_POST](t, zero, cap, pcur, work);                                \
+    double ka, k10, k12, k21, k13, k31;                                               \
+    int nc = rate_constants(lc, cap, &ka, &k10, &k12, &k21, &k13, &k31);              \
+    if (zpx_lin_setup(&L, nc, lc[1], ka, k10, k12, k21, k13, k31) != ZPX_LIN_OK) {     \
+      UNPROTECT(2);                                                                   \
+      return fail("solver", "a rate constant of the closed form is not a finite positive number", cur); \
+    }                                                                                 \
+  } while (0)
+
+  SET_RECORD(0);
+  long k = 0;
+  for (long i = 0; i < count; i++) {
+    const zpx_entry *e = &ent[i];
+    if (e->time > t) {
+      zpx_lin_step(&L, e->time - t, y, r);
+      t = e->time;
+    }
+    if (e->phase == 2 && e->rec != cur) SET_RECORD(e->rec);
+    int c = e->cmt - 1;
+    switch (e->kind) {
+    case ZPX_E_OBS:
+      m->lowered.fn[ZPX_POST](t, y, cap, pcur, work);
+      o[k] = t;
+      for (int j = 0; j < ny; j++) o[k + (R_xlen_t) nobs * (1 + j)] = y[j];
+      for (int j = 0; j < ncap; j++) o[k + (R_xlen_t) nobs * (1 + ny + j)] = cap[j];
+      INTEGER(orow)[k] = e->rec;
+      k++;
+      break;
+    case ZPX_E_BOLUS: y[c] += e->amount; break;
+    case ZPX_E_INF_START:
+      active[e->link] = e->rate;
+      r[c] += e->rate;
+      break;
+    case ZPX_E_INF_END:
+      /* An infusion a reset stopped has nothing left to end. */
+      if (active[e->link] != 0) {
+        r[c] -= active[e->link];
+        active[e->link] = 0;
+        if (fabs(r[c]) < 1e-12 * e->rate) r[c] = 0;
+      }
+      break;
+    case ZPX_E_RESET:
+      for (int j = 0; j < ny; j++) y[j] = r[j] = 0;
+      for (long l = 0; l < nlink; l++) active[l] = 0;
+      break;
+    case ZPX_E_SS: {
+      double s[ZPX_LIN_MAX] = {0}, v[ZPX_LIN_MAX] = {0};
+      if (e->ss == 1) {
+        for (int j = 0; j < ny; j++) y[j] = r[j] = 0;
+        for (long l = 0; l < nlink; l++) active[l] = 0;
+      }
+      if (e->rate > 0 && e->ii == 0) {
+        v[c] = e->rate;
+        zpx_lin_ss_constant(&L, v, s);
+      } else if (e->rate > 0) {
+        v[c] = e->rate;
+        zpx_lin_ss_infusion(&L, e->ii, e->dur, v, s);
+      } else {
+        v[c] = e->amount;
+        zpx_lin_ss_bolus(&L, e->ii, v, s);
+      }
+      for (int j = 0; j < ny; j++) y[j] += s[j];
+      break;
+    }
+    default: break;
+    }
+  }
+#undef SET_RECORD
+  const char *names[] = {"out", "row", ""};
+  SEXP res = PROTECT(Rf_mkNamed(VECSXP, names));
+  SET_VECTOR_ELT(res, 0, out);
+  SET_VECTOR_ELT(res, 1, orow);
+  UNPROTECT(3);
+  return res;
+}

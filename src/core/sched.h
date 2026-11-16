@@ -54,6 +54,7 @@ typedef struct zpx_entry {
   int ss;        /* 1 or 2 on ZPX_E_SS */
   int rec;       /* 0-based record the entry came from */
   int phase;     /* order at one time: 0 infusion end, 1 generated, 2 record */
+  long link;     /* an infusion's start and end share it; -1 otherwise */
   long seq;      /* order within a phase */
 } zpx_entry;
 

@@ -30,8 +30,7 @@ URL: https://pedrobtz.github.io/zupmxode/,
     https://github.com/pedrobtz/zupmxode
 BugReports: https://github.com/pedrobtz/zupmxode/issues
 LinkingTo: 
-    zumir,
-    zuexact
+    zumir
 Remotes: 
     pedrobtz/dazdiff,
     pedrobtz/zumir

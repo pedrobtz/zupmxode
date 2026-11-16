@@ -135,13 +135,14 @@ long zpx_sched_build(const zpx_record *rec, int n, int ncmt, zpx_entry *out, int
                      int *where) {
   long count = zpx_sched_count(rec, n, ncmt, error, where);
   if (count < 0) return -1;
-  long k = 0, gen = 0;
+  long k = 0, gen = 0, links = 0;
   for (int i = 0; i < n; i++) {
     const zpx_record *r = &rec[i];
     /* Record entries keep data order: four slots per record (reset, steady
      * state, dose, other). */
     long base = (long) i * 4;
     zpx_entry e = {0};
+    e.link = -1;
     e.rec = i;
     e.time = r->time;
     e.phase = 2;
@@ -168,6 +169,7 @@ long zpx_sched_build(const zpx_record *rec, int n, int ncmt, zpx_entry *out, int
     double amount = r->amt * r->f;
     for (long d = 0; d <= r->addl; d++) {
       zpx_entry s = {0};
+      s.link = -1;
       s.rec = i;
       s.cmt = r->cmt;
       /* k * II from the record's time, not summed, so the doses do not
@@ -195,6 +197,7 @@ long zpx_sched_build(const zpx_record *rec, int n, int ncmt, zpx_entry *out, int
       }
       if (inf) {
         s.kind = ZPX_E_INF_START;
+        s.link = links++;
         s.rate = rate;
         s.dur = dur;
         out[k++] = s;

@@ -8,8 +8,8 @@
 # is compared. Both tables must have the same keys; a key in one only, a
 # missing compared column, or a duplicate key fails the expectation.
 expect_table_equal <- function(object, expected, by = c("id", "time"),
-                               rtol = 1e-6, atol = 1e-8) {
-  label <- deparse1(substitute(object))
+                               rtol = 1e-6, atol = 1e-8, label = NULL) {
+  if (is.null(label)) label <- deparse1(substitute(object))
   if (requireNamespace("dazdiff", quietly = TRUE) &&
         !isTRUE(getOption("zupmxode.test.local_tables"))) {
     dazdiff::expect_table_equal(object, expected, by = by,

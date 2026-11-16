@@ -21,7 +21,7 @@ is the one §4.7 describes.
 | 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | [#23](https://github.com/pedrobtz/zupmxode/pull/23) | 2026-11-16 |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | [#24](https://github.com/pedrobtz/zupmxode/pull/24) | 2026-11-16 |
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | [#25](https://github.com/pedrobtz/zupmxode/pull/25) | 2026-11-16 |
-| 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | | |
+| 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | [#26](https://github.com/pedrobtz/zupmxode/pull/26) | 2026-11-16 |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | | |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | |
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | | |
@@ -327,6 +327,17 @@ matching both oracles, with exact sums.
 - Every Tests line exists, uses its oracle, and was seen to fail.
 - `assurance.md` boundary rows for the closed forms and PREDPP events
   filled.
+
+**Deviations, 2026-11-16.**
+
+- The closed forms carry the state between events (design D21) rather
+  than summing doses through `zuexact`. The superposition test became
+  "1,000 doses stay within 1e-12 of 200-bit superposition"
+  (`tools/make-closed-form-reference.R`).
+- The three-engine record of the §6.2 corners covers the closed-form
+  cases here; they agree with both engines, so nothing is listed. The
+  corner cases written for ODE models (lag across an infusion end,
+  covariate LOCF) join with the general solvers in Stage 6.
 
 **Design.** [§4.3](design.md#43-solvers-c), [§4.5](design.md#45-r-layer),
 [§6.3](design.md#63-numerics).
