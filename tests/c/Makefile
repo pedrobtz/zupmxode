@@ -12,9 +12,10 @@ LSODA_SRC = $(wildcard $(LSODA)/*.c)
 .PHONY: check clean
 LSODA_OBJ = $(LSODA_SRC:.c=.o)
 
-check: test_core test_lsoda
+check: test_core test_lsoda test_header
 	./test_core
 	./test_lsoda
+	./test_header
 
 # The vendored library is compiled on its own, without -Werror: it is
 # upstream's code but for tools/vendor's patches, and -Wextra finds unused
@@ -30,5 +31,9 @@ test_lsoda: test_lsoda.c $(LSODA_OBJ) $(wildcard $(LSODA)/*.h)
 test_core: test_core.c $(SRC) $(wildcard $(CORE)/*.h) $(LSODA_OBJ)
 	$(CC) $(STRICT) $(CFLAGS) -I$(CORE) -o $@ test_core.c $(SRC) $(LSODA_OBJ) -lm
 
+# The public header alone, with no R include path: it must need none.
+test_header: test_header.c ../../inst/include/zupmxode.h
+	$(CC) $(STRICT) $(CFLAGS) -I../../inst/include -o $@ test_header.c
+
 clean:
-	rm -f test_core test_core.exe test_lsoda test_lsoda.exe $(LSODA_OBJ)
+	rm -f test_core test_core.exe test_lsoda test_lsoda.exe test_header test_header.exe $(LSODA_OBJ)
