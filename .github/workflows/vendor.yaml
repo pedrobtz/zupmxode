@@ -23,3 +23,10 @@ jobs:
         || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
         || contains(github.event.pull_request.labels.*.name, 'skip-ci:vendor'))
     uses: pedrobtz/r-actions/.github/workflows/vendor.yml@v1
+    with:
+      # The patches live in tools/vendor/liblsoda.sh, beside the manifest:
+      # a new or changed patch re-runs it and changes the tree without
+      # changing the pin, so the script stands in for the manifest.
+      must-update: |
+        tools/vendor/manifest.tsv | tools/vendor/liblsoda.sh
+        tools/vendor/checksums.sha256
