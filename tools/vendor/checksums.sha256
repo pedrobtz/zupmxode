@@ -15,7 +15,7 @@ c1c2bb11d28340cdad08e072e7795e4fe95e1a54c8def1e9f49c95a4e0a7af5b  ./liblsoda/dsc
 fe199c200045a87c80e6c2d1d520639122874bd8e4a5cff44b80ba8d6164c64c  ./liblsoda/fnorm.c
 403bf7a9b875cee4beea06de6fc675278b37cf1fd40e350c8e833dc6994fbe50  ./liblsoda/idamax.c
 b3f7f4d11372146bed97116fd2004100cf6410237a89632c9e4749718ca594ab  ./liblsoda/intdy.c
-f376cbd069cba6a856f802bad0c118373ceafb35c0d35e815fcde0534ddebf70  ./liblsoda/lsoda.c
+4c5fdf311757e0dbe41872058a0a6835fe41f67701f22963dcff6dd4584ea479  ./liblsoda/lsoda.c
 d3b1e941c424bf6b715dc99b6dcf08bb78fb61729f5aad9bf4c0f56d628b9c9c  ./liblsoda/lsoda.h
 c3882e63f444633fad42d9cdbee227a4235c367d6600894dbb1bbd9567b597b8  ./liblsoda/lsoda_internal.h
 a9135df127613c6f37944d6886e4647f886d87bddfe4cd08b3556192b6d8c012  ./liblsoda/methodswitch.c

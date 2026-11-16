@@ -40,6 +40,9 @@
   article gives the benchmarks against rxode2 and mrgsolve and the tier
   each platform runs.
 
+* Running out of memory inside LSODA, or while MIR lowers a model, is an R
+  error naming the allocation, not a crash or a "bug" report.
+
 * `pmx_ode_subjects()` prepares subjects once and `pmx_ode_subject_eval()`
   evaluates one at a theta and eta, giving its predictions (the doubles
   `pmx_ode_solve()` gives) and residual variances, as an estimator needs.

@@ -34,6 +34,10 @@
 #      the length into a one-byte buffer rather than NULL, returning NULL
 #      for a NULL format (gcc's fortified headers, under UBSan, warn of a
 #      null format on that path).
+#  12. lsoda_prepare() returns 0 when its calloc() fails, and alloc_mem()
+#      when its malloc() does, before either writes through the pointer:
+#      upstream dereferenced both unchecked (found by zupmxode's
+#      alloc-failure sweep, Stage 12).
 #   3. _strdup_printf() allocates one byte more, for the string's NUL, and
 #      returns NULL when malloc() does: upstream truncated every message by
 #      a character and wrote through an unchecked pointer.
@@ -85,6 +89,10 @@ perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\) \{/char * _strdup_
 for f in "$dest"/*.c "$dest"/*.h; do
   perl -pi -e 's/\b(daxpy|ddot|dgefa|dgesl|dscal|idamax)\b/lsoda_$1/g' "$f"
 done
+# 12. Check the two allocations before they are used.
+perl -0pi -e 's/(\tctx->common = calloc\(1, sizeof\(struct lsoda_common_t\)\);\n)/$1\tif (ctx->common == NULL) return 0;\n/; s/(\t_C\(memory\) = malloc\(offset\);\n)/$1\tif (_C(memory) == NULL) return 0;\n/' "$dest/lsoda.c"
+grep -q 'if (ctx->common == NULL) return 0;' "$dest/lsoda.c"
+grep -q 'if (_C(memory) == NULL) return 0;' "$dest/lsoda.c"
 # 7. No abort() in solsy().
 perl -0pi -e 's/\t\tabort\(\);/\t\treturn 0;/' "$dest/solsy.c"
 # 6. (void) for empty parameter lists.

@@ -161,11 +161,15 @@ int zpx_lower(const zpx_ir *ir, int tier, zpx_lowered *out, void *scratch, const
   memset(out, 0, sizeof(*out));
   if (zumir_api_ == NULL) return ZPX_LOWER_E_API;
   out->z = zumir_ctx_new(&status);
-  if (out->z == NULL) return ZPX_LOWER_E_MIR;
+  /* A context MIR cannot make is a memory failure: zumir reports MIR's
+   * allocation error there as ZUMIR_E_MIR and frees the context with its
+   * message (pedrobtz/zumir#111), and MIR's initialisation fails for
+   * nothing else. */
+  if (out->z == NULL) return ZPX_LOWER_E_NO_MEMORY;
   status = register_imports(out->z);
   if (status != ZUMIR_OK) {
     zumir_status(out->z, message);
-    return ZPX_LOWER_E_MIR;
+    return status == ZUMIR_E_NO_MEMORY ? ZPX_LOWER_E_NO_MEMORY : ZPX_LOWER_E_MIR;
   }
   MIR_context_t ctx = zumir_mir(out->z);
   labels = scratch;
@@ -190,6 +194,7 @@ int zpx_lower(const zpx_ir *ir, int tier, zpx_lowered *out, void *scratch, const
     if (fn == NULL) {
       *where_block = b;
       if (status == ZUMIR_E_MIR || status == ZUMIR_E_FAILED) zumir_status(out->z, message);
+      if (status == ZUMIR_E_NO_MEMORY) return ZPX_LOWER_E_NO_MEMORY;
       return status == ZUMIR_E_NO_TIER ? ZPX_LOWER_E_NO_TIER : ZPX_LOWER_E_MIR;
     }
     out->fn[b] = (zpx_block_fn) fn;

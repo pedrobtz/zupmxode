@@ -229,6 +229,11 @@ static int finite_state(const double *y, int n) {
   return 1;
 }
 
+/* integrate()'s return when LSODA cannot allocate its workspace: an
+ * error of the subject, not a solver failure to report as NA. */
+#define INTEGRATE_NO_MEMORY 99
+static const char *no_memory = "cannot allocate LSODA's workspace";
+
 static int integrate(int method, general *g, double rtol, double atol, double t0, double t1,
                      double *y, double *dwork, zpx_dopri *D, double *reached) {
   *reached = t1;
@@ -261,8 +266,10 @@ static int integrate(int method, general *g, double rtol, double atol, double t0
   ctx.neq = g->ny;
   ctx.state = 1;
   if (!lsoda_prepare(&ctx, &opt)) {
+    /* The options are always valid here: a failed prepare is a failed
+     * allocation (tools/vendor/liblsoda.sh, patch 12). */
     if (ctx.common != NULL) lsoda_free(&ctx);
-    return 1;
+    return INTEGRATE_NO_MEMORY;
   }
   double t = t0;
   lsoda(&ctx, y, &t, t1);
@@ -445,6 +452,12 @@ void zpx_solve_subject(const zpx_blocks *b, const zpx_solve_opts *o, zpx_record 
           st = integrate(method, &g, o->rtol, o->atol, t, e->time, A.y, A.dwork, &D, &reached);
         }
       }
+      if (st == INTEGRATE_NO_MEMORY) {
+        res->error = ZPX_SOLVE_E_SOLVER;
+        res->message = no_memory;
+        res->error_row = e->rec;
+        return;
+      }
       if (st != 0) {
         failed = 1;
         res->failed_at = reached;
@@ -545,25 +558,26 @@ void zpx_solve_subject(const zpx_blocks *b, const zpx_solve_opts *o, zpx_record 
       memcpy(A.ybuf, A.r, sizeof(double) * (size_t) ny);
       int converged = 0;
       double ss_reached;
+      int ist = 0;
       for (long it = 0; it < o->ss_cap && !failed; it++) {
         memcpy(A.prev, A.s, sizeof(double) * (size_t) ny);
         for (int j = 0; j < ny; j++) A.r[j] = 0;
         if (e->rate > 0 && e->ii == 0) {
           A.r[c] = e->rate;
-          if (integrate(method, &g, o->rtol, o->atol, 0, 24, A.s, A.dwork, &D, &ss_reached) != 0)
-            failed = 1;
+          if ((ist = integrate(method, &g, o->rtol, o->atol, 0, 24, A.s, A.dwork, &D, &ss_reached)) != 0)
+            failed = ist;
         } else if (e->rate > 0) {
           A.r[c] = e->rate;
-          if (integrate(method, &g, o->rtol, o->atol, 0, e->dur, A.s, A.dwork, &D, &ss_reached) != 0)
-            failed = 1;
+          if ((ist = integrate(method, &g, o->rtol, o->atol, 0, e->dur, A.s, A.dwork, &D, &ss_reached)) != 0)
+            failed = ist;
           A.r[c] = 0;
           if (!failed &&
-              integrate(method, &g, o->rtol, o->atol, e->dur, e->ii, A.s, A.dwork, &D, &ss_reached) != 0)
-            failed = 1;
+              (ist = integrate(method, &g, o->rtol, o->atol, e->dur, e->ii, A.s, A.dwork, &D, &ss_reached)) != 0)
+            failed = ist;
         } else {
           A.s[c] += e->amount;
-          if (integrate(method, &g, o->rtol, o->atol, 0, e->ii, A.s, A.dwork, &D, &ss_reached) != 0)
-            failed = 1;
+          if ((ist = integrate(method, &g, o->rtol, o->atol, 0, e->ii, A.s, A.dwork, &D, &ss_reached)) != 0)
+            failed = ist;
         }
         double change = 0;
         for (int j = 0; j < ny; j++) {
@@ -577,6 +591,12 @@ void zpx_solve_subject(const zpx_blocks *b, const zpx_solve_opts *o, zpx_record 
         }
       }
       memcpy(A.r, A.ybuf, sizeof(double) * (size_t) ny);
+      if (failed == INTEGRATE_NO_MEMORY) {
+        res->error = ZPX_SOLVE_E_SOLVER;
+        res->message = no_memory;
+        res->error_row = e->rec;
+        return;
+      }
       if (failed) {
         res->failed_at = t;
         res->failed_row = e->rec;

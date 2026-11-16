@@ -60,3 +60,6 @@ tests/c/test_lsoda
 tests/c/test_lsoda.exe
 tests/c/test_header
 tests/c/test_header.exe
+tests/c/test_replay
+tests/c/test_replay.exe
+tests/c/test_replay_mull

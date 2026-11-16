@@ -288,6 +288,7 @@ static int alloc_mem(struct lsoda_context_t * ctx) {
 	offset += (1 + nyh) * sizeof(int);
 
 	_C(memory) = malloc(offset);
+	if (_C(memory) == NULL) return 0;
 
 	_C(yh) = (double **)((char *)_C(memory) + yhoff);
 	_C(wm) =  (double **)((char *)_C(memory) + wmoff);
@@ -435,6 +436,7 @@ c-----------------------------------------------------------------------
  */
 int lsoda_prepare(struct lsoda_context_t * ctx, struct lsoda_opt_t * opt) {
 	ctx->common = calloc(1, sizeof(struct lsoda_common_t));
+	if (ctx->common == NULL) return 0;
 	ctx->opt = opt;
 
 	/* Default options.   */

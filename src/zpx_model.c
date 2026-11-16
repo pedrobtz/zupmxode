@@ -97,7 +97,9 @@ static SEXP model_new(SEXP code, SEXP consts, SEXP s_tier, int fail_after) {
   const char *message;
   int st = zpx_lower(&ir, tier, &m->lowered, scratch, &message, &block);
   if (st != ZPX_LOWER_OK) {
-    SEXP res = PROTECT(status_list(st == ZPX_LOWER_E_NO_TIER ? "no_tier" : "lowering",
+    SEXP res = PROTECT(status_list(st == ZPX_LOWER_E_NO_TIER     ? "no_tier"
+                                   : st == ZPX_LOWER_E_NO_MEMORY ? "no_memory"
+                                                                 : "lowering",
                                    message, block, -1));
     R_ClearExternalPtr(x);
     model_free(m);
