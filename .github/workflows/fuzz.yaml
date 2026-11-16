@@ -1,0 +1,51 @@
+# Coverage-guided fuzzing of the IR verifier (tests/fuzz/fuzz_ir_verify.c),
+# built from src/core/ without R. The harness's oracle is more than "no
+# crash": an accepted IR is evaluated with arrays of exactly its declared
+# sizes, under ASan. 30 seconds on a pull request, 30 minutes weekly.
+on:
+  # `labeled`/`unlabeled` so that adding or removing a CI label reruns it.
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  schedule:
+    - cron: "37 17 * * 0"
+  workflow_dispatch:
+
+name: fuzz
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:fuzz'))
+    uses: pedrobtz/r-actions/.github/workflows/fuzz.yml@v1
+    with:
+      harness: tests/fuzz/fuzz_ir_verify.c
+      sources: src/core/ir.c
+      cflags: -Isrc/core
+      seed-corpus: tests/fuzz/corpus
+      profile: auto
+      max-total-time: 1800
+
+  report:
+    needs: fuzz
+    if: ${{ always() && github.event_name == 'schedule' && needs.fuzz.result != 'skipped' }}
+    permissions:
+      issues: write
+    uses: pedrobtz/r-actions/.github/workflows/report.yml@v1
+    with:
+      name: fuzz
+      result: ${{ needs.fuzz.result }}
+      finding: ${{ needs.fuzz.outputs.finding }}
+      key: ${{ needs.fuzz.outputs.finding-key }}
+      details: ${{ needs.fuzz.outputs.report }}

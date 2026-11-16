@@ -21,8 +21,8 @@ rxode2 model language, over NONMEM-style event records, in parallel over
 subjects, with no C compiler on the machine. Models are parsed in R,
 compiled to the package's own IR, and turned into native code (or run in
 MIR's interpreter) through `zumir`. It is a simulation engine with a C API
-for estimators; it is not an estimator, not a new model language, and has
-no `Imports`.
+for estimators; it is not an estimator, not a new model language, and
+imports nothing but `zumir` (design D20).
 
 The specification is [`.agents/design.md`](.agents/design.md), adopted from
 RFC 0047. It outranks this file: `CLAUDE.md` orients, the design decides.
@@ -58,18 +58,35 @@ until it is, and its release gates this package's submission.
 
 ## Architecture
 
-To be written as stages land; see `.agents/design.md` §4. The engine is
-C in `src/core/`, which never includes R's headers, so the C tests, fuzz
-harnesses and mutation runs build it alone; `src/zupmxode.c` is the only
-R glue and registers the `.Call` entry points.
+See `.agents/design.md` §4 for the whole. Built so far:
+
+- `src/core/ir.[ch]`: the IR format, its verifier, a reference evaluator
+  (the tests' oracle and the fuzz harness's, never an execution tier) and
+  the math table. No R headers.
+- `src/zpx_lower.c`: IR to MIR, one module and one function per block,
+  through `zumir`'s C API and emitter; `zumir_import()` registers the
+  table's functions the C library lacks.
+- `src/zpx_model.c`: the model's external pointer and finalizer, and the
+  `.Call` entries. Failures of the IR or of MIR come back as status lists;
+  `R/model.R` raises the classed condition.
+- `R/ir.R`: the IR assembler (tests now, the compiler from Stage 3);
+  `R/model.R`: tiers, lowering, regeneration after `readRDS()` (D18).
+- `src/zupmxode.c`: registration only.
 
 ## Invariants that are easy to break
 
 These are fixed by the design before any code exists; each names the
 section that decides it.
 
-- No `Imports`, ever (§2, §12). A runtime dependency breaks the
-  "stock R installation" promise the package exists for.
+- No `Imports` but `zumir` (§2, §12, D20). Another runtime dependency
+  breaks the "stock R installation" promise the package exists for.
+  `zumir` is there only because `R_GetCCallable()` needs its namespace
+  loaded.
+- Nothing under `src/core/` includes R's headers (`tests/c` fails to
+  build if it does). The IR verifier in `src/core/ir.c` is the only thing
+  between a saved IR and lowered code: every new opcode or operand needs
+  its range check there, its refusal test in `test-ir-verify.R`, and a
+  seed in `tests/fuzz/corpus/`.
 - C code never calls `error()` and never touches an R object inside the
   parallel region or `zupmxode_subject_eval()`; it returns status codes
   and writes into caller-owned buffers (§4.4, §4.6, §8). Breaking it
@@ -98,6 +115,12 @@ Helpers:
   route, tested on its own.
 - `helper-oracle.R`: reads fixtures and solves with rxode2. The generator
   sources it, so tests and fixtures solve the same way.
+- `helper-models.R`: hand-built IR models, each with its answer written
+  in R; `available_tiers()` lists the tiers this session runs.
+
+`fixtures/math-reference.csv` is the math table's oracle, from
+`tools/make-math-reference.R` (needs Rmpfr); `tests/fuzz/corpus/` the
+fuzz seeds, from `tools/make-fuzz-corpus.R`.
 
 The suite runs shuffled, top-level code included: build test data inside
 `test_that()` or in a helper, never at file level. Runtime: about 20 s

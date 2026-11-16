@@ -9,7 +9,9 @@ columns as they are.
 - **Tables:** delete a table only when no kind requires it. Delete the
   example rows.
 
-Written 2026-11-15 in Stage 0, before any code beyond the scaffold exists.
+Written 2026-11-15 in Stage 0, before any code beyond the scaffold existed;
+Stage 2 filled the rows of the IR, the lowering, the math table and the
+compiled model.
 Every row comes from [design.md](design.md) and [roadmap.md](roadmap.md),
 so almost every cell is a gap naming the stage issue whose pull request
 writes its test. Each stage turns its rows into facts.
@@ -34,15 +36,15 @@ call to r-actions.
 
 | Check         | Status  | Where              |
 | ------------- | ------- | ------------------ |
-| sanitizers    | gap #4  |                    |
+| sanitizers    | done    | native-checks.yaml |
 | valgrind      | done    | native-checks.yaml |
 | rchk          | done    | native-checks.yaml |
 | gctorture     | done    | gctorture.yaml     |
 | analyzers     | done    | native-checks.yaml |
 | alloc-failure | gap #14 |                    |
 | mutation      | gap #14 |                    |
-| fuzz          | gap #4  |                    |
-| fuzz-reach    | gap #4  |                    |
+| fuzz          | done    | fuzz.yaml          |
+| fuzz-reach    | done    | fuzz.yaml          |
 
 ## Boundaries
 
@@ -59,9 +61,12 @@ One row per boundary the package crosses. An oracle knows the answer:
 <!-- markdownlint-disable MD013 -->
 | Boundary                         | Oracle                                                         | Carried by |
 | -------------------------------- | -------------------------------------------------------------- | ---------- |
-| serialised IR                    | round trip; altered or truncated IR refused by the verifier    | gap #4     |
-| lowering to MIR, two tiers       | native and interpreter give identical doubles                  | gap #4     |
-| math table                       | R's own functions on a grid with NaN, ±Inf, -0                 | gap #4     |
+| serialised IR                    | round trip; altered or truncated IR refused by the verifier    | tests/testthat/test-ir-serialise.R |
+| serialised IR                    | an accepted IR touches only its declared arrays (ASan)         | tests/fuzz/fuzz_ir_verify.c |
+| lowering to MIR, two tiers       | native and interpreter give identical doubles                  | tests/testthat/test-tiers.R |
+| lowering to MIR, two tiers       | the reference evaluator, and R's arithmetic on the same inputs | tests/testthat/test-tiers.R |
+| math table                       | Rmpfr at 200 bits for finite arguments                         | tests/testthat/test-math-table.R |
+| math table                       | R's own functions at poles, infinities, NaN and zero           | tests/testthat/test-math-table.R |
 | rxode2 model language subset     | R's value of each construct; rxode2 compiles what we accept    | gap #5     |
 | PREDPP event semantics           | hand-computed timelines, rule by rule                          | gap #6     |
 | PREDPP event semantics           | rxode2 and mrgsolve on the same events (three-engine record)   | gap #7     |
@@ -81,7 +86,7 @@ cannot apply.
 <!-- markdownlint-disable MD013 -->
 | Object                          | Sequences | Fork    | Unwind  | Owner   |
 | ------------------------------- | --------- | ------- | ------- | ------- |
-| compiled model (MIR context)    | gap #4    | gap #4  | gap #4  | gap #4  |
+| compiled model (MIR context)    | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | n/a: the lowered code embeds its constants and points into no IR or R object |
 | prepared subjects               | gap #12   | gap #12 | gap #12 | gap #12 |
 | evaluation arena (C API)        | gap #12   | gap #12 | gap #12 | gap #12 |
 <!-- markdownlint-enable MD013 -->
@@ -95,3 +100,7 @@ One row per limit the package enforces. "Straddled by" is the test of
 | ----------------------------- | ---------- | ------------ |
 | matrix-exponential state cap  | states     | gap #9       |
 | general steady-state cap      | iterations | gap #8       |
+| IR instructions per block     | instructions | tests/testthat/test-ir-verify.R |
+| IR registers per block        | registers  | tests/testthat/test-ir-verify.R |
+| IR states, parameters, work and outputs | slots | tests/testthat/test-ir-verify.R |
+| IR constants                  | constants  | tests/testthat/test-ir-verify.R |

@@ -23,12 +23,18 @@ concurrency:
 # gctorture.yml, with step 20 on a schedule.
 jobs:
 
-  # sanitizers: added in Stage 2, with the first C that has something to
-  # instrument. Today's C (a registration entry point and a constant) emits
-  # no UBSan check, so the job's instrumentation verifier, which looks for a
-  # __ubsan symbol, fails before R CMD check runs (pedrobtz/r-actions#68;
-  # zutempo deferred the job the same way). Tracked as gap #4 in
-  # .agents/assurance.md.
+  sanitizers:
+    # Decided without a runner (ci.md, Labels); the gate inside repeats it.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:sanitizers'))
+    uses: pedrobtz/r-actions/.github/workflows/sanitizers.yml@v1
+    with:
+      asan: true
+      profile: auto
 
   valgrind:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.
@@ -41,6 +47,10 @@ jobs:
     uses: pedrobtz/r-actions/.github/workflows/valgrind.yml@v1
     with:
       profile: auto
+      suppressions: tools/valgrind.supp
+      # --smc-check=all: MIR writes code at run time, which memcheck must
+      # notice to run the new code rather than a stale translation.
+      valgrind-opts: "--leak-check=full --track-origins=yes --num-callers=30 --smc-check=all"
 
   lto:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.
@@ -61,6 +71,12 @@ jobs:
         || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
         || contains(github.event.pull_request.labels.*.name, 'skip-ci:rchk'))
     uses: pedrobtz/r-actions/.github/workflows/rchk.yml@v1
+    with:
+      fail-on-findings: true
+      # rchk installs dependencies from CRAN only; zumir is not there yet.
+      # Drop this once it is (roadmap Stage 14).
+      github-packages: |
+        pedrobtz/zumir
 
   analyzers:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.

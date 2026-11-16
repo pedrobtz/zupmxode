@@ -11,8 +11,29 @@ static SEXP zupmxode_core_abi_r(void) {
   return Rf_ScalarInteger(zupmxode_core_abi());
 }
 
+SEXP zpx_ir_verify_r(SEXP, SEXP);
+SEXP zpx_model_new(SEXP, SEXP, SEXP);
+SEXP zpx_test_unwind(SEXP, SEXP, SEXP);
+SEXP zpx_model_valid(SEXP);
+SEXP zpx_model_tier(SEXP);
+SEXP zpx_live_models(void);
+SEXP zpx_tiers(void);
+SEXP zpx_model_eval(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_ir_eval_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_math_r(SEXP, SEXP, SEXP);
+
 static const R_CallMethodDef call_methods[] = {
   {"zupmxode_core_abi_r", (DL_FUNC) &zupmxode_core_abi_r, 0},
+  {"zpx_ir_verify_r", (DL_FUNC) &zpx_ir_verify_r, 2},
+  {"zpx_model_new", (DL_FUNC) &zpx_model_new, 3},
+  {"zpx_test_unwind", (DL_FUNC) &zpx_test_unwind, 3},
+  {"zpx_model_valid", (DL_FUNC) &zpx_model_valid, 1},
+  {"zpx_model_tier", (DL_FUNC) &zpx_model_tier, 1},
+  {"zpx_live_models", (DL_FUNC) &zpx_live_models, 0},
+  {"zpx_tiers", (DL_FUNC) &zpx_tiers, 0},
+  {"zpx_model_eval", (DL_FUNC) &zpx_model_eval, 6},
+  {"zpx_ir_eval_r", (DL_FUNC) &zpx_ir_eval_r, 7},
+  {"zpx_math_r", (DL_FUNC) &zpx_math_r, 3},
   {NULL, NULL, 0}
 };
 

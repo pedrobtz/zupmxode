@@ -18,7 +18,7 @@ is now a pointer here.
   order of the packages that lead to an estimator.
 - **Packages:** `zupmxode` (not yet created; crandb returns `not_found`
   and there is no `pedrobtz/zupmxode` repository, both checked
-  2026-11-12). No `Imports`. `LinkingTo: zumir, zuexact`, and `zuspecial`
+  2026-11-12). `Imports: zumir` only (D20). `LinkingTo: zumir, zuexact`, and `zuspecial`
   once its C API carries Lambert W
   ([zuspecial#61](https://github.com/pedrobtz/zuspecial/issues/61)) and
   it is on CRAN (D11). `Suggests: testthat, rxode2, mrgsolve, zupmxio,
@@ -209,6 +209,36 @@ right-hand side's arithmetic is parameter algebra that changes only when
 an event or a covariate does. The IR is an integer vector plus a
 constant pool, cached on the model object and serialisable. It does not
 depend on MIR (D13).
+
+The format is specified where it is verified, in `src/core/ir.h`
+(2026-11-15, Stage 2): a header with the counts, five block descriptors,
+fixed-width instructions of an opcode and four operands, forward jumps
+only, every register 0.0 on entry. The verifier accepts an IR only when
+every access stays inside the arrays its header declares, and caps each
+count: 10^6 instructions and 65,536 registers per block, 65,536 states,
+parameters, work slots and outputs, 10^6 constants. A saved IR is
+verified again before it is lowered.
+
+**The math table's values** (decided 2026-11-15). At poles, infinities,
+NaN and zero each function gives what R gives, since those are the values
+a model written for rxode2 sees; `^` follows R's rules (a zero base has
+no sign, a negative base to an infinite power is NaN). For finite
+arguments each function is held to the true value, computed with Rmpfr
+at 200 bits, within a bound per function, in units in the
+last place; for the functions whose result passes through zero (`sin`,
+`cos`, `tan`, `log`, `lgamma`, `logit`, `probit`) in units of
+eps × max(|f(x)|, |x f′(x)|), the result's movement under one rounding
+of x, since no library rounds correctly at a zero (half a unit in the last place
+for `sqrt`, a few for the rest), not to R's result: R's `gamma()` and
+`lgamma()` are further off than the C library's (by 228 units at
+`gamma(100.5)`). The sign of a zero result is C's, as rxode2's compiled
+code gives it. Comparisons follow C on NaN. Where a platform's C library is wrong,
+the table does not take it: `sqrt` is compiled into the package (mingw-w64's
+library rounds `sqrt(1 - 2^-53)` to 1), and `lgamma` is computed directly
+near zero and from 1e10 (mingw-w64's overflows at both). `sin`, `cos`
+and `tan` are held to the truth for |x| ≤ 1e5; beyond that they are the
+platform library's, unchecked: mingw-w64's reduces 1e300 wrongly, and no
+model reaches that range.
 
 ### 4.2 Event scheduler (C)
 
@@ -548,7 +578,7 @@ shared) and its Q5 (where W+X memory is refused, `zumir_tier()` is
 - Every §10 row is measured and recorded, met or not; the two rows the
   package exists for (compile time, candidate loop) are met.
 - `R CMD check --as-cran` is clean on all r-actions legs, including the
-  legs without OpenMP; no `Imports`. The README names the tier each leg
+  legs without OpenMP; no `Imports` but `zumir` (D20). The README names the tier each leg
   runs.
 
 ## 13. Decisions
@@ -650,6 +680,13 @@ decides it and the maintainer may overturn it.
   models (additive, proportional, combined, exponential); any other is
   a function the user applies to the predictions, as the documentation
   shows. Answers Q2.
+
+- **D20 (C), 2026-11-15.** `zumir` is in `Imports` as well as
+  `LinkingTo`, the only package in `Imports`. Its C API table is fetched
+  with `R_GetCCallable()`, which needs `zumir`'s namespace loaded, and
+  `Imports` is what loads it; `zumir`'s own stand-in consumer does the
+  same. This adds no dependency: §3 and D11 already make `zumir`
+  required. Found in Stage 2, when the first lowering ran.
 
 ## 14. Later versions, in the order they are expected
 

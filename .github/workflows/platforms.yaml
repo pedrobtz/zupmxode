@@ -1,7 +1,6 @@
 # zupmxode's own per-OS checks, one job per OS: the steps of
-# tools/ci/platform.sh (the C core built and tested without R). Ubuntu only
-# while the core holds no platform-dependent code; macOS and Windows join in
-# Stage 2, with the first engine code (roadmap).
+# tools/ci/platform.sh (the C core built and tested without R), on macOS,
+# Windows and Linux.
 on:
   # `labeled`/`unlabeled` so that adding or removing a CI label reruns it.
   pull_request:
@@ -31,4 +30,4 @@ jobs:
     uses: pedrobtz/r-actions/.github/workflows/platforms.yml@v1
     with:
       profile: auto
-      os: '["ubuntu-latest"]'
+      os: '["macos-latest", "windows-latest", "ubuntu-latest"]'
