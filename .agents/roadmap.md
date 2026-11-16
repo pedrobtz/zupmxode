@@ -24,7 +24,7 @@ is the one §4.7 describes.
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | [#26](https://github.com/pedrobtz/zupmxode/pull/26) | 2026-11-16 |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | [#27](https://github.com/pedrobtz/zupmxode/pull/27) | 2026-11-16 |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | [#28](https://github.com/pedrobtz/zupmxode/pull/28) | 2026-11-16 |
-| 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | | 2026-11-16 |
+| 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | [#29](https://github.com/pedrobtz/zupmxode/pull/29) | 2026-11-16 |
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | | |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | | |
 | 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | | |
@@ -496,6 +496,10 @@ thread, on both tiers, with nothing allocated on the R heap.
 - Seen to fail with OpenMP (the ubuntu-release image; this Mac's R has
   none): one arena shared by every thread, and the interrupt check
   removed.
+- Under gctorture and valgrind the corpus sweep, the interrupt test and
+  the allocation test are skipped (with them the wide gctorture step ran
+  past its 10 minutes and valgrind past its hour); the 40-subject test
+  (valgrind) and the subject-order test still cross the parallel region.
 - Found on the way: `pmx_ode_tier()` dropped what the compiler recorded
   (class, states), so the copy could not be given a solver; fixed, with
   its test in `test-model-object.R`.

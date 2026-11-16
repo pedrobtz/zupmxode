@@ -2,6 +2,7 @@
 # give, bit for bit, what one thread gives, on every solver and tier.
 
 test_that("many threads give the bits 1 thread gives, every solver, every tier", {
+  skip_under_gctorture()
   ev <- population_events(40)
   p <- c(tcl = 2, tv = 20, tka = 0.8, ka = 0.8, k = 0.1, vmax = 10, km = 2)
   n <- test_threads()
@@ -20,7 +21,7 @@ test_that("many threads give the bits 1 thread gives, every solver, every tier",
 })
 
 test_that("every corpus case, copied over subjects, is the same at 1 and many threads", {
-  skip_under_gctorture()
+  skip_on_slow_checker()
   man <- oracle_read("manifest.csv")
   n <- test_threads()
   solved <- 0L
@@ -59,6 +60,7 @@ test_that("the subjects come back in order, each its own", {
 })
 
 test_that("an interrupt between chunks returns control, and the next solve works", {
+  skip_on_slow_checker()
   m <- pmx_ode_method(thread_models()$general, "lsoda")
   ev <- population_events(2000, times = seq(0.5, 36, by = 0.5))
   p <- c(ka = 0.8, vmax = 10, km = 2)

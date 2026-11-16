@@ -5,6 +5,9 @@
 
 test_that("a solve's R allocations do not grow with its subjects", {
   skip_if_not(capabilities("profmem"), "R built without memory profiling")
+  # The checkers change nothing R allocates, and thousands of subjects
+  # under them outrun their budgets.
+  skip_on_slow_checker()
   m <- pmx_ode_method(pmx_ode_model("d/dt(central) <- -k * wt / 70 * central"), "lsoda")
   # Both sizes past R's small-vector pools (a few subjects allocate from
   # them, a different count): 200 and 2000 subjects.

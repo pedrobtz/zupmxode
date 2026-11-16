@@ -124,3 +124,12 @@ with_warnings <- function(expr) {
   })
   list(value = value, warnings = w)
 }
+
+# The thread tests that solve thousands of subjects or the whole corpus
+# many times over: past the budget under gctorture (10 minutes) and
+# valgrind (an hour, with its threads run one at a time). Under both,
+# the 40-subject test and the subject-order test still cross the region.
+skip_on_slow_checker <- function() {
+  testthat::skip_if(Sys.getenv("R_ACTIONS_WORKFLOW") %in% c("gctorture", "valgrind"),
+                    "thousands of subjects; the smaller thread tests run here")
+}
