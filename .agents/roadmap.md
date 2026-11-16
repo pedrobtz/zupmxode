@@ -20,7 +20,7 @@ is the one §4.7 describes.
 | 1 | [Oracle corpus and baseline](#stage-1--oracle-corpus-and-baseline) | quick | [#3](https://github.com/pedrobtz/zupmxode/issues/3) | [#22](https://github.com/pedrobtz/zupmxode/pull/22) | 2026-11-15 |
 | 2 | [IR and lowering through zumir](#stage-2--ir-and-lowering-through-zumir) | full | [#4](https://github.com/pedrobtz/zupmxode/issues/4) | [#23](https://github.com/pedrobtz/zupmxode/pull/23) | 2026-11-16 |
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | [#24](https://github.com/pedrobtz/zupmxode/pull/24) | 2026-11-16 |
-| 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | | |
+| 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | | 2026-11-16 |
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | | |
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | | |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | |

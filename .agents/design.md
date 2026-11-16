@@ -449,6 +449,35 @@ straddles an infusion end, `SS=2` with a changed interval), the test
 suite records all three and the documentation says which one
 `zupmxode` follows and why.
 
+How the scheduler reads the records (decided 2026-11-16, Stage 4;
+`src/core/sched.h`). The three-engine record of Stage 5 says where
+rxode2 or mrgsolve read a case otherwise.
+
+- **Order at one time:** infusion ends, then doses the scheduler made
+  (additional doses, doses moved by their lag), then the records in data
+  order. An observation written before a dose at the same time sees the
+  amount before it.
+- **Bioavailability and infusions:** a given `RATE` keeps its rate and F
+  changes the duration (PREDPP); a given `DUR`, or the model's `dur()`
+  under `RATE = -2`, keeps its duration and F changes the rate.
+  `RATE = -1` takes the model's `rate()`. `DUR` with a `RATE` is an error.
+- **Additional doses** are at `TIME + k * II`, computed so, not summed,
+  and take the lag, bioavailability, rate and duration of the record
+  that made them.
+- **Steady state** is an entry before the dose it belongs to: with
+  `SS = 1` the compartments are reset and set to the steady state just
+  before a dose of that interval, with `SS = 2` that steady state is
+  added to what is there, and the dose then follows. A steady-state
+  infusion with `II = 0` runs on with no end.
+- **`EVID 2`** marks a time; a negative `CMT` switches that compartment
+  off, a positive one on. `EVID 3` resets every compartment; `EVID 4`
+  resets and doses at once.
+- **Covariates** are the table's other columns named like parameters,
+  each record carrying its value, so a value holds from its record until
+  the next (last observation carried forward); the model's lag and
+  bioavailability are taken at the dose's record.
+- **Limits:** one subject's timeline holds at most 10^6 entries.
+
 ### 6.3 Numerics
 
 Default tolerances match rxode2 (`rtol = 1e-6`, `atol = 1e-8`) so
