@@ -25,6 +25,13 @@ SEXP zpx_math_r(SEXP, SEXP, SEXP);
 SEXP zpx_solve_all(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP zpx_omp_max(void);
 SEXP zpx_schedule_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_subject_new(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_subject_valid(SEXP);
+SEXP zpx_subject_eval_r(SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_test_eval_threads(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_test_c_api(SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_status_message_r(SEXP);
+void zpx_api_register(void);
 
 static const R_CallMethodDef call_methods[] = {
   {"zupmxode_core_abi_r", (DL_FUNC) &zupmxode_core_abi_r, 0},
@@ -41,6 +48,12 @@ static const R_CallMethodDef call_methods[] = {
   {"zpx_solve_all", (DL_FUNC) &zpx_solve_all, 18},
   {"zpx_omp_max", (DL_FUNC) &zpx_omp_max, 0},
   {"zpx_schedule_r", (DL_FUNC) &zpx_schedule_r, 14},
+  {"zpx_subject_new", (DL_FUNC) &zpx_subject_new, 17},
+  {"zpx_subject_valid", (DL_FUNC) &zpx_subject_valid, 1},
+  {"zpx_subject_eval_r", (DL_FUNC) &zpx_subject_eval_r, 5},
+  {"zpx_test_eval_threads", (DL_FUNC) &zpx_test_eval_threads, 6},
+  {"zpx_test_c_api", (DL_FUNC) &zpx_test_c_api, 4},
+  {"zpx_status_message_r", (DL_FUNC) &zpx_status_message_r, 1},
   {NULL, NULL, 0}
 };
 
@@ -48,4 +61,5 @@ attribute_visible void R_init_zupmxode(DllInfo *dll) {
   R_registerRoutines(dll, NULL, call_methods, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
+  zpx_api_register();
 }
