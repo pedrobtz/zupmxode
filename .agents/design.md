@@ -18,7 +18,7 @@ is now a pointer here.
   order of the packages that lead to an estimator.
 - **Packages:** `zupmxode` (not yet created; crandb returns `not_found`
   and there is no `pedrobtz/zupmxode` repository, both checked
-  2026-11-12). `Imports: zumir` only (D20). `LinkingTo: zumir, zuexact`, and `zuspecial`
+  2026-11-12). `Imports: zumir` only (D20). `LinkingTo: zumir` (zuexact left with D21), and `zuspecial`
   once its C API carries Lambert W
   ([zuspecial#61](https://github.com/pedrobtz/zuspecial/issues/61)) and
   it is on CRAN (D11). `Suggests: testthat, rxode2, mrgsolve, zupmxio,
@@ -256,11 +256,11 @@ depend on individual parameters and covariates.
 ### 4.3 Solvers (C)
 
 - **Closed-form**: one-, two- and three-compartment models with bolus,
-  zero-order and first-order input, superposition over doses, exact
-  steady state. Parameterisations: clearance and volume, micro-constants,
+  zero-order and first-order input, the state carried exactly between
+  events (D21), exact steady state. Parameterisations: clearance and volume, micro-constants,
   and the `linCmt()` set. Oracle: rxode2's `linCmt()` and mrgsolve's
-  `PKMODEL`. Superposition and steady-state sums go through one
-  `zuexact` accumulator per thread and are rounded once. One-compartment
+  `PKMODEL`. A compartment switched off is not supported here; the
+  general solvers take such a model. One-compartment
   Michaelis–Menten elimination has the Schnell–Mendoza closed form
   through the principal branch of Lambert W; it ships when `zuspecial`
   exposes `lambertw` in C (zuspecial#61) and is on CRAN, and until then
@@ -742,6 +742,17 @@ decides it and the maintainer may overturn it.
   `Imports` is what loads it; `zumir`'s own stand-in consumer does the
   same. This adds no dependency: §3 and D11 already make `zumir`
   required. Found in Stage 2, when the first lowering ran.
+
+- **D21 (M), 2026-11-16.** The closed forms carry the compartments'
+  state exactly from one event to the next, through the system's
+  eigenvalues (closed-form roots for one to three compartments), instead
+  of summing every dose's response. Superposition is valid only while a
+  subject's parameters stay constant, which a time-varying covariate, a
+  reset or a switched-off compartment breaks. With no long sums left,
+  `zuexact` leaves `LinkingTo`. Steady state is the fixed point of one
+  dosing interval. Where two eigenvalues nearly meet (ka at an
+  elimination rate), a matrix exponential takes over. Tested against
+  200-bit superposition where superposition holds.
 
 ## 14. Later versions, in the order they are expected
 

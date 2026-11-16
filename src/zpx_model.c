@@ -9,13 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "core/ir.h"
-#include "zpx_lower.h"
-
-typedef struct zpx_model {
-  zpx_lowered lowered;
-  zpx_ir dims; /* counts only: its code and consts pointers are not kept */
-} zpx_model;
+#include "zpx_model.h"
 
 /* Live models, for the tests of the finalizer. Main thread only. */
 static int live_models = 0;
@@ -106,10 +100,12 @@ SEXP zpx_test_unwind(SEXP code, SEXP consts, SEXP tier) {
   return model_new(code, consts, tier, 1);
 }
 
-static zpx_model *model_get(SEXP x) {
+zpx_model *zpx_model_get(SEXP x) {
   if (TYPEOF(x) != EXTPTRSXP || R_ExternalPtrTag(x) != model_tag()) return NULL;
   return R_ExternalPtrAddr(x);
 }
+
+static zpx_model *model_get(SEXP x) { return zpx_model_get(x); }
 
 SEXP zpx_model_valid(SEXP x) { return Rf_ScalarLogical(model_get(x) != NULL); }
 

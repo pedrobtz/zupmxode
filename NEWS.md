@@ -10,3 +10,6 @@
 
 * `pmx_ode_events()` builds a NONMEM-style event table of doses and
   observation times.
+
+* `pmx_ode_solve()` solves closed-form models (`linCmt()`) for one or more
+  subjects, exactly, with time-varying covariates, resets and steady state.

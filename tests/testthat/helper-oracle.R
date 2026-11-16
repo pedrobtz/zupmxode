@@ -47,3 +47,27 @@ oracle_solve_rxode2 <- function(rx_text, events, params, outputs,
   rownames(out) <- NULL
   out
 }
+
+# Every ok case of the oracle corpus whose model compiles to `class`.
+oracle_cases_of_class <- function(class) {
+  man <- oracle_read("manifest.csv")
+  cases <- unique(man$case[man$status == "ok"])
+  keep <- vapply(cases, function(case) {
+    m <- tryCatch(pmx_ode_model(oracle_case(case)$rx), pmx_ode_error_compile = function(e) NULL)
+    !is.null(m) && identical(m$class, class)
+  }, NA)
+  cases[keep]
+}
+
+# zupmxode's solution of a case, with the fixture's columns.
+solve_case <- function(case) {
+  c <- oracle_case(case)
+  m <- pmx_ode_model(c$rx)
+  pmx_ode_solve(m, c$events, c$params)
+}
+
+# The 16 hexadecimal digits of IEEE bits back to doubles.
+hex_double <- function(h) {
+  bytes <- as.raw(strtoi(substring(rep(h, each = 8), seq(1, 15, 2), seq(2, 16, 2)), 16L))
+  readBin(bytes, "double", n = length(h), size = 8, endian = "big")
+}

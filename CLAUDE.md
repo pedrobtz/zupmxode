@@ -41,8 +41,8 @@ The current version's parent issue is
 [#1](https://github.com/pedrobtz/zupmxode/issues/1) for `v0.1.0`.
 Siblings that will depend on it: `zupmxfit` (RFC 0072, through
 `zupmxode_subject_eval()`) and `zupmxio` (RFC 0046, `Suggests` both
-ways). It will link to `zumir` and
-`zuexact`; `zumir` is not on CRAN yet, so it comes through `Remotes:`
+ways). It links to `zumir` only (zuexact
+left with design D21); `zumir` is not on CRAN yet, so it comes through `Remotes:`
 until it is, and its release gates this package's submission.
 
 ## Commands
@@ -67,6 +67,10 @@ See `.agents/design.md` §4 for the whole. Built so far:
   sorted timeline (design §6.2 has the rules); `src/zpx_sched.c` its
   `.Call`; `R/events.R` `pmx_ode_events()`, the table's checks and
   `sched_timeline()`, the tests' view of a timeline.
+- `src/core/linear.[ch]`: the closed forms, the state carried exactly
+  between events through the eigenvalues, with a matrix exponential where
+  they meet (D21); `src/zpx_solve.c` walks a subject's timeline with it;
+  `R/solve.R` is `pmx_ode_solve()`.
 - `src/zpx_lower.c`: IR to MIR, one module and one function per block,
   through `zumir`'s C API and emitter; `zumir_import()` registers the
   table's functions the C library lacks.

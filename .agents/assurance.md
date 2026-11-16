@@ -70,8 +70,9 @@ One row per boundary the package crosses. An oracle knows the answer:
 | rxode2 model language subset     | R's value of each construct; rxode2 compiles what we accept    | tests/testthat/test-language.R |
 | PREDPP event semantics           | hand-computed timelines, rule by rule                          | tests/testthat/test-events-rules.R |
 | PREDPP event semantics           | the timeline sorted, every dose expanded, every infusion ended | tests/fuzz/fuzz_scheduler.c |
-| PREDPP event semantics           | rxode2 and mrgsolve on the same events (three-engine record)   | gap #7     |
-| closed-form solutions            | rxode2 `linCmt()` and mrgsolve `PKMODEL`                       | gap #7     |
+| PREDPP event semantics           | rxode2 and mrgsolve on the same events (three-engine record)   | tests/testthat/test-closed-form.R |
+| closed-form solutions            | rxode2 `linCmt()` and mrgsolve `PKMODEL`                       | tests/testthat/test-closed-form.R |
+| closed-form solutions            | 200-bit superposition over 1,000 doses                         | tests/testthat/test-closed-form.R |
 | LSODA and Dormand–Prince         | rxode2 and mrgsolve; closed form on linear models              | gap #8     |
 | matrix exponential               | LSODA at tight tolerance; closed form where one exists         | gap #9     |
 | C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects               | gap #12    |

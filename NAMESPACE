@@ -3,6 +3,7 @@
 S3method(print,pmx_ode_model)
 export(pmx_ode_events)
 export(pmx_ode_model)
+export(pmx_ode_solve)
 export(pmx_ode_tier)
 importFrom(zumir,zumir_tier)
 useDynLib(zupmxode, .registration = TRUE)
