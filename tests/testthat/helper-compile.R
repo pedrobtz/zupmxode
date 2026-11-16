@@ -180,3 +180,13 @@ blocks_bits <- function(m, inputs) {
   b <- run_blocks(m, inputs$t, inputs$y[m$states], inputs$par[m$params])
   lapply(b, function(x) writeBin(as.vector(x), raw()))
 }
+
+# The sweeps over the whole corpus run R code: the compiler, and R's own
+# evaluation as their oracle. gctorture is for the C entries, which
+# test-tiers.R, test-model-object.R and test-ir-serialise.R exercise under
+# it; the sweeps run on every other leg, and at step 500 they alone would
+# take past gctorture's 10-minute budget.
+skip_under_gctorture <- function() {
+  testthat::skip_if(identical(Sys.getenv("R_ACTIONS_WORKFLOW"), "gctorture"),
+                    "a corpus sweep of R code, run on every other leg")
+}

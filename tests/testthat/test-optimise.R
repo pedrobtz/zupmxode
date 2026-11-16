@@ -4,6 +4,7 @@
 
 
 test_that("each optimisation off gives the same doubles on every corpus model", {
+  skip_under_gctorture()
   texts <- corpus_model_texts()
   offs <- list(list(fold = FALSE), list(cse = FALSE), list(hoist = FALSE),
                list(dce = FALSE),

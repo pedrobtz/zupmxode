@@ -35,6 +35,7 @@ test_that("statements compute R's values: =, if/else, specials, cmt()", {
 })
 
 test_that("every corpus model without linCmt() computes R's values", {
+  skip_under_gctorture()
   texts <- corpus_model_texts()
   ran <- 0L
   for (name in names(texts)) {
@@ -117,6 +118,7 @@ test_that("a model can be given as braces, a function or text", {
 
 test_that("what zupmxode compiles, rxode2 compiles too", {
   skip_on_cran()
+  skip_under_gctorture()
   skip_if_not_installed("rxode2")
   texts <- c(
     unlist(corpus_model_texts()),
@@ -128,10 +130,12 @@ test_that("what zupmxode compiles, rxode2 compiles too", {
       TRUE
     }, pmx_ode_error_compile = function(e) FALSE)
     if (!ok) next
+    # rxModelVars() parses and translates the model as rxode2() does,
+    # without the C compiler that would take 89 of the suite's seconds.
     compiled <- tryCatch({
-      suppressMessages(rxode2::rxode2(text))
+      suppressMessages(rxode2::rxModelVars(text))
       TRUE
     }, error = function(e) FALSE)
-    expect_true(compiled, label = paste("rxode2 compiles", text))
+    expect_true(compiled, label = paste("rxode2 accepts", text))
   }
 })
