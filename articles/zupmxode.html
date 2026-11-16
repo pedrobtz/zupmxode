@@ -70,7 +70,7 @@ same models with nothing but R. This page compiles a one-compartment
 model with first-order absorption, and gives it a week of daily 100 mg
 doses:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu">pmx_ode_events</span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
+<code class="sourceCode R"><span><span class="va">ev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_events.html">pmx_ode_events</a></span><span class="op">(</span>amt <span class="op">=</span> <span class="fl">100</span>, ii <span class="op">=</span> <span class="fl">24</span>, addl <span class="op">=</span> <span class="fl">6</span>, cmt <span class="op">=</span> <span class="st">"depot"</span>,</span>
 <span>                      time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">168</span>, by <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="compile-a-model">Compile a model<a class="anchor" aria-label="anchor" href="#compile-a-model"></a>

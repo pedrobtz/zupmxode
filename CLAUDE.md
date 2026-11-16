@@ -64,6 +64,12 @@ See `.agents/design.md` §4 for the whole. Built so far:
 - `src/core/ir.[ch]`: the IR format, its verifier, a reference evaluator
   (the tests’ oracle and the fuzz harness’s, never an execution tier)
   and the math table. No R headers.
+- `src/core/sched.[ch]`: the event scheduler, one subject’s records to a
+  sorted timeline (design §6.2 has the rules); `src/zpx_sched.c` its
+  `.Call`; `R/events.R`
+  [`pmx_ode_events()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_events.md),
+  the table’s checks and `sched_timeline()`, the tests’ view of a
+  timeline.
 - `src/zpx_lower.c`: IR to MIR, one module and one function per block,
   through `zumir`’s C API and emitter; `zumir_import()` registers the
   table’s functions the C library lacks.
@@ -130,8 +136,9 @@ Helpers:
   the compiler’s oracle.
 
 `fixtures/math-reference.csv` is the math table’s oracle, from
-`tools/make-math-reference.R` (needs Rmpfr); `tests/fuzz/corpus/` the
-fuzz seeds, from `tools/make-fuzz-corpus.R`.
+`tools/make-math-reference.R` (needs Rmpfr); `tests/fuzz/corpus/` and
+`tests/fuzz/corpus-scheduler/` the fuzz seeds, from
+`tools/make-fuzz-corpus.R`.
 
 The suite runs shuffled, top-level code included: build test data inside
 `test_that()` or in a helper, never at file level. Runtime: about 20 s

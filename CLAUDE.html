@@ -72,6 +72,8 @@
 <ul><li>
 <code>src/core/ir.[ch]</code>: the IR format, its verifier, a reference evaluator (the tests’ oracle and the fuzz harness’s, never an execution tier) and the math table. No R headers.</li>
 <li>
+<code>src/core/sched.[ch]</code>: the event scheduler, one subject’s records to a sorted timeline (design §6.2 has the rules); <code>src/zpx_sched.c</code> its <code>.Call</code>; <code>R/events.R</code> <code><a href="reference/pmx_ode_events.html">pmx_ode_events()</a></code>, the table’s checks and <code>sched_timeline()</code>, the tests’ view of a timeline.</li>
+<li>
 <code>src/zpx_lower.c</code>: IR to MIR, one module and one function per block, through <code>zumir</code>’s C API and emitter; <code>zumir_import()</code> registers the table’s functions the C library lacks.</li>
 <li>
 <code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>
@@ -104,7 +106,7 @@
 <code>helper-models.R</code>: hand-built IR models, each with its answer written in R; <code>available_tiers()</code> lists the tiers this session runs.</li>
 <li>
 <code>helper-compile.R</code>: <code>run_blocks()</code> runs a compiled model’s blocks as the solvers will; <code>r_eval_model()</code> evaluates the same statements in R, the compiler’s oracle.</li>
-</ul><p><code>fixtures/math-reference.csv</code> is the math table’s oracle, from <code>tools/make-math-reference.R</code> (needs Rmpfr); <code>tests/fuzz/corpus/</code> the fuzz seeds, from <code>tools/make-fuzz-corpus.R</code>.</p>
+</ul><p><code>fixtures/math-reference.csv</code> is the math table’s oracle, from <code>tools/make-math-reference.R</code> (needs Rmpfr); <code>tests/fuzz/corpus/</code> and <code>tests/fuzz/corpus-scheduler/</code> the fuzz seeds, from <code>tools/make-fuzz-corpus.R</code>.</p>
 <p>The suite runs shuffled, top-level code included: build test data inside <code>test_that()</code> or in a helper, never at file level. Runtime: about 20 s locally, most of it rxode2 compiling three models.</p>
 </div>
 <div class="section level2">
