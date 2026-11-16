@@ -5,6 +5,7 @@
 # Every symbol hidden but R_init_zupmxode: nothing in the package can be
 # bound by another library's name, nor bind to one (liblsoda's BLAS names
 # met OpenBLAS's; tools/vendor/liblsoda.sh patch 11).
-PKG_CFLAGS = $(C_VISIBILITY)
+PKG_CFLAGS = $(C_VISIBILITY) $(SHLIB_OPENMP_CFLAGS)
+PKG_LIBS = $(SHLIB_OPENMP_CFLAGS)
 LSODA = vendor/liblsoda/cfode.o vendor/liblsoda/cfode_static.o vendor/liblsoda/common.o vendor/liblsoda/corfailure.o vendor/liblsoda/correction.o vendor/liblsoda/daxpy.o vendor/liblsoda/ddot.o vendor/liblsoda/dgefa.o vendor/liblsoda/dgesl.o vendor/liblsoda/dscal.o vendor/liblsoda/fnorm.o vendor/liblsoda/idamax.o vendor/liblsoda/intdy.o vendor/liblsoda/lsoda.o vendor/liblsoda/methodswitch.o vendor/liblsoda/orderswitch.o vendor/liblsoda/prja.o vendor/liblsoda/scaleh.o vendor/liblsoda/solsy.o vendor/liblsoda/stoda.o vendor/liblsoda/strdup_printf.o vendor/liblsoda/vmnorm.o
-OBJECTS = zupmxode.o zpx_lower.o zpx_model.o core/core.o core/ir.o core/sched.o core/linear.o core/dopri.o core/expm.o zpx_sched.o zpx_solve.o $(LSODA)
+OBJECTS = zupmxode.o zpx_lower.o zpx_model.o core/core.o core/ir.o core/sched.o core/linear.o core/dopri.o core/expm.o core/solve.o zpx_sched.o zpx_solve.o $(LSODA)

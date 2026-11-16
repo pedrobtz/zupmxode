@@ -116,21 +116,30 @@ double zpx_gamma(double x) {
   return tgamma(x);
 }
 
-/* lgamma() through the C library, except for x >= 1e10, where Stirling's
- * series is exact to rounding and mingw-w64's lgamma() overflows to Inf
- * (at 1e300). The library's sign is written to a global on some systems,
- * which matters once blocks run on worker threads (roadmap Stage 8
- * replaces it with a re-entrant one). */
+/* log |gamma(x)|, re-entrant: the C library's lgamma() writes the sign of
+ * gamma to a global on some systems, a race once blocks run on worker
+ * threads (design §4.4). Below 15, log |tgamma(x)| (tgamma is re-entrant);
+ * from 15, Stirling's series to the term in x^-9, exact to rounding there
+ * (mingw-w64's library lgamma() also overflowed at 1e300 and was Inf at
+ * 2^-1074); for large negative x, the reflection formula. Poles give
+ * +Inf, as R's lgamma(). */
 double zpx_lgamma(double x) {
-  /* Near zero lgamma(x) is -log|x| to rounding (the next term is -0.577 x),
-   * and mingw-w64's lgamma() returns Inf at 2^-1074. */
-  if (x != 0.0 && fabs(x) < 1e-17) return -log(fabs(x));
-  if (x >= 1e10 && isfinite(x)) {
+  if (isnan(x)) return x;
+  if (isinf(x)) return INFINITY;
+  if (x <= 0 && x == floor(x)) return INFINITY;
+  if (fabs(x) < 1e-17) return -log(fabs(x));
+  if (x >= 15) {
     const double half_log_two_pi = 0.91893853320467274;
-    double l = log(x);
-    return x * (l - 1.0) - 0.5 * l + half_log_two_pi + 1.0 / (12.0 * x);
+    double l = log(x), r = 1.0 / x, r2 = r * r;
+    double series = r * (1.0 / 12 - r2 * (1.0 / 360 - r2 * (1.0 / 1260 - r2 * (1.0 / 1680 -
+                                                                                r2 / 1188))));
+    return (x - 0.5) * l - x + half_log_two_pi + series;
   }
-  return lgamma(x);
+  if (x > -15) return log(fabs(tgamma(x)));
+  /* gamma(x) gamma(1 - x) = pi / sin(pi x), with 1 - x >= 16. */
+  const double pi = 3.14159265358979323846;
+  double sp = sin(pi * (x - floor(x)));
+  return log(pi / fabs(sp)) - zpx_lgamma(1 - x);
 }
 
 static double fn_abs(double x) { return fabs(x); }

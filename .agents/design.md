@@ -309,6 +309,32 @@ no allocation happens inside the parallel region and no R object is
 touched. The runtime checks for user interrupts between subjects on the
 main thread. Without OpenMP the same code runs on one thread.
 
+How it is built (Stage 8, 2026-11-16):
+
+- One subject's solve is `src/core/solve.c`, which builds without R's
+  headers, so the C tests compile it and nothing in it can reach the R
+  API. `src/zpx_solve.c` does everything R-facing before and after the
+  region: copies the records, counts each subject's observations (its
+  rows of the output) and timeline entries (the arena it needs), sizes
+  one arena per thread for the largest subject, and turns per-subject
+  status structs into conditions afterwards, in subject order, so the
+  first error reported does not depend on the thread count.
+- Subjects go to threads dynamically, one at a time, in chunks of eight
+  per thread; `R_CheckUserInterrupt()` runs between chunks, outside the
+  region. Each subject writes only its own rows, so the output is the
+  same bits at any thread count.
+- On the interpreter tier each thread past the first gets its own MIR
+  context, lowered from the IR before the region (zumir D10), owned by an
+  external pointer so an interrupt cannot strand them. Native code is
+  shared: it is re-entrant.
+- `lgamma()` from the C library writes the sign of gamma to a global
+  (`signgam`) on glibc and others; the math table's `lgamma` is the
+  package's own (log |tgamma| below 15, Stirling's series from 15, the
+  reflection formula below -15), checked against the Rmpfr reference.
+- `pmx_ode_threads()` sets the count, 1 by default: CRAN allows two
+  cores in checks, and a package that takes every core by default
+  surprises a user already running in parallel.
+
 ### 4.5 R layer
 
 `pmx_ode_model()` parses, compiles and lowers; `pmx_ode_sim()`

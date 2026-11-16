@@ -45,6 +45,7 @@ call to r-actions.
 | mutation      | gap #14 |                    |
 | fuzz          | done    | fuzz.yaml          |
 | fuzz-reach    | done    | fuzz.yaml          |
+| threadcheck   | done    | native-checks.yaml |
 
 ## Boundaries
 
@@ -76,6 +77,8 @@ One row per boundary the package crosses. An oracle knows the answer:
 | LSODA and Dormand–Prince         | rxode2 and mrgsolve; closed form on linear models              | tests/testthat/test-ode.R |
 | LSODA, vendored                  | two contexts in turn against each alone, and the exact solution | tests/c/test_lsoda.c |
 | matrix exponential               | LSODA at tight tolerance; closed form where one exists         | tests/testthat/test-expm.R |
+| parallel runtime                 | one thread, bit for bit, on every corpus case and both tiers   | tests/testthat/test-threads.R |
+| parallel runtime                 | R's allocations in a solve do not grow with its subjects       | tests/testthat/test-alloc.R |
 | C API `zupmxode_subject_eval()`  | `pmx_ode_solve()` on the same model and subjects               | gap #12    |
 <!-- markdownlint-enable MD013 -->
 
@@ -90,6 +93,7 @@ cannot apply.
 | Object                          | Sequences | Fork    | Unwind  | Owner   |
 | ------------------------------- | --------- | ------- | ------- | ------- |
 | compiled model (MIR context)    | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | tests/testthat/test-model-object.R | n/a: the lowered code embeds its constants and points into no IR or R object |
+| per-thread interpreter contexts | tests/testthat/test-threads.R | n/a: made and freed within one call | tests/testthat/test-threads.R | an external pointer of the call, finalised on an interrupt |
 | prepared subjects               | gap #12   | gap #12 | gap #12 | gap #12 |
 | evaluation arena (C API)        | gap #12   | gap #12 | gap #12 | gap #12 |
 <!-- markdownlint-enable MD013 -->

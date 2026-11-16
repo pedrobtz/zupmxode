@@ -47,10 +47,25 @@ jobs:
     uses: pedrobtz/r-actions/.github/workflows/valgrind.yml@v1
     with:
       profile: auto
+      # The suite took 46 minutes under valgrind at Stage 8 (threads run one
+      # at a time there), past the default hour once. Full profile only.
+      timeout-minutes: 90
       suppressions: tools/valgrind.supp
       # --smc-check=all: MIR writes code at run time, which memcheck must
       # notice to run the new code rather than a stale translation.
       valgrind-opts: "--leak-check=full --track-origins=yes --num-callers=30 --smc-check=all"
+
+  threadcheck:
+    # C runs on OpenMP worker threads from Stage 8 (design §4.4): an R API
+    # call there ends this R. test-threads.R crosses into the parallel
+    # region at 2 threads or more, on both tiers.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'ci:minimal')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:threadcheck'))
+    uses: pedrobtz/r-actions/.github/workflows/threadcheck.yml@v1
 
   lto:
     # Decided without a runner (ci.md, Labels); the gate inside repeats it.
