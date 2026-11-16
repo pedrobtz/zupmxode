@@ -24,8 +24,12 @@ pmx_ode_solve(model, events, params = double())
   [`pmx_ode_events()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_events.md),
   or a NONMEM-style data frame with columns `ID`, `TIME`, `EVID`, `AMT`,
   `CMT`, `RATE`, `DUR`, `II`, `ADDL` and `SS` (any case; all but `TIME`
-  optional). Columns named like a model parameter are covariates, each
-  record carrying its value.
+  optional). With no `EVID`, a record with an `AMT` above 0 is a dose,
+  one with `MDV` 1 marks a time (`EVID` 2), and the rest are
+  observations; given `EVID`, `MDV` is not read. `CMT` is a
+  compartment's name or number. Columns named like a model parameter are
+  covariates, each record carrying its value; other columns, such as
+  `DV`, are ignored.
 
 - params:
 

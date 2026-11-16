@@ -32,9 +32,9 @@ says what changes if the spike fails.
 
 ## Current state
 
-Stage 0 (package identity and CI) done 2026-11-15; no engine
-functionality yet. The roadmap in `.agents/roadmap.md` takes it to
-v0.1.0.
+Stages 0 to 9 done (2026-11-16): models compile, solve and simulate
+populations; the C API (Stage 10) is next. The roadmap in
+`.agents/roadmap.md` takes it to v0.1.0.
 
 ## Versions and dependents
 
@@ -91,6 +91,16 @@ See `.agents/design.md` §4 for the whole. Built so far:
 - `src/zpx_model.c`: the model’s external pointer and finalizer, and the
   `.Call` entries. Failures of the IR or of MIR come back as status
   lists; `R/model.R` raises the classed condition.
+- `R/sim.R`:
+  [`pmx_ode_sim()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_sim.md),
+  the etas and residual draws in R (D7) put on the table as covariate
+  columns for one
+  [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md),
+  and the error models
+  [`add()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+  [`prop()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+  [`lnorm()`](https://pedrobtz.github.io/zupmxode/reference/add.md) and
+  `add() + prop()` (D19).
 - `R/compile.R`: the compiler, R’s parse to IR text for the assembler:
   statements, names, `linCmt()`’s expansion, the classifier, and one
   generator for every block (DCE by statement, folding through the math

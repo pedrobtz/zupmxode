@@ -64,8 +64,11 @@ deterministic core that the population simulation builds on.</p>
 <dd><p>An event table: from <code><a href="pmx_ode_events.html">pmx_ode_events()</a></code>, or a NONMEM-style
 data frame with columns <code>ID</code>, <code>TIME</code>, <code>EVID</code>, <code>AMT</code>, <code>CMT</code>, <code>RATE</code>,
 <code>DUR</code>, <code>II</code>, <code>ADDL</code> and <code>SS</code> (any case; all but <code>TIME</code> optional).
+With no <code>EVID</code>, a record with an <code>AMT</code> above 0 is a dose, one with
+<code>MDV</code> 1 marks a time (<code>EVID</code> 2), and the rest are observations; given
+<code>EVID</code>, <code>MDV</code> is not read. <code>CMT</code> is a compartment's name or number.
 Columns named like a model parameter are covariates, each record
-carrying its value.</p></dd>
+carrying its value; other columns, such as <code>DV</code>, are ignored.</p></dd>
 
 
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>

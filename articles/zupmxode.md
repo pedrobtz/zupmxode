@@ -80,12 +80,29 @@ seed gives the same result at any thread count.
 
 ``` r
 
-pmx_ode_threads(8)
+old <- pmx_ode_threads(2)
 set.seed(1)
 sim <- pmx_ode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
                     omega = diag(c(0.1, 0.1, 0.1)),
-                    sigma = list(cp = prop(0.1)), n = 1000)
+                    sigma = list(cp = prop(0.1)), n = 100)
+pmx_ode_threads(old)
+head(sim[c("id", "time", "cp", "cp_obs", "eta.ka", "eta.cl", "eta.v")])
+#>   id time       cp   cp_obs    eta.ka     eta.cl      eta.v
+#> 1  1    0 0.000000 0.000000 0.1294642 -0.1961772 -0.1981021
+#> 2  1    1 4.710940 4.217564 0.1294642 -0.1961772 -0.1981021
+#> 3  1    2 4.834858 5.787972 0.1294642 -0.1961772 -0.1981021
+#> 4  1    3 4.332211 4.166014 0.1294642 -0.1961772 -0.1981021
+#> 5  1    4 3.799775 4.428313 0.1294642 -0.1961772 -0.1981021
+#> 6  1    5 3.320535 3.822670 0.1294642 -0.1961772 -0.1981021
 ```
+
+The etas are the parameters `omega` names, or, as here, the model’s
+parameters named `eta...` in order. Residual error comes from
+[`add()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+[`prop()`](https://pedrobtz.github.io/zupmxode/reference/add.md), their
+sum `add() + prop()`, or
+[`lnorm()`](https://pedrobtz.github.io/zupmxode/reference/add.md); the
+observation with error sits next to the prediction as `cp_obs`.
 
 ## Choose the solver and the tier
 

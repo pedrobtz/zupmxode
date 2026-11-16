@@ -40,3 +40,17 @@
 - [`pmx_ode_tier()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_tier.md)
   keeps a model’s compartments, outputs and solver when it makes the
   copy on another tier.
+
+- [`pmx_ode_sim()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_sim.md)
+  simulates a population: etas drawn from `omega`, and residual error
+  from [`add()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+  [`prop()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+  `add() + prop()` or
+  [`lnorm()`](https://pedrobtz.github.io/zupmxode/reference/add.md),
+  every draw made with R’s random number generator, so
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) makes a simulation
+  reproducible at any thread count.
+
+- [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
+  reads NONMEM’s `MDV` when a table has no `EVID`: a record with no dose
+  and `MDV` 1 marks a time rather than being an observation.
