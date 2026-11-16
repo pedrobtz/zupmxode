@@ -26,8 +26,9 @@
 #      " @(file:line)" suffix goes with it.
 #  10. _strdup_printf() is declared with printf's format attribute, so the
 #      compiler checks every message against its arguments, and measures
-#      the length into a one-byte buffer rather than NULL (gcc's fortified
-#      headers warn of a null format there).
+#      the length into a one-byte buffer rather than NULL, returning NULL
+#      for a NULL format (gcc's fortified headers, under UBSan, warn of a
+#      null format on that path).
 #   3. _strdup_printf() allocates one byte more, for the string's NUL, and
 #      returns NULL when malloc() does: upstream truncated every message by
 #      a character and wrote through an unchecked pointer.
@@ -74,7 +75,7 @@ perl -0pi -e 's/#define ERROR\(fmt, \.\.\.\) \(ctx->error\? free\(ctx->error\):\
 perl -0pi -e 's/#define hardfailure\(fmt,\.\.\.\) \\\n\{ \\\n\tERROR\(fmt, ## __VA_ARGS__\);/#define hardfailure(...) \\\n{ \\\n\tERROR(__VA_ARGS__);/; s/#define softfailure\(code, fmt,\.\.\.\) \\\n(\{ \\\n\tint             i_; \\\n\tint neq = ctx->neq; \\\n \\\n)\tERROR\(fmt, ## __VA_ARGS__\);/#define softfailure(code, ...) \\\n$1\tERROR(__VA_ARGS__);/' "$dest/lsoda.c"
 # 10. The format attribute, and no NULL buffer.
 perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\);/#if defined(__GNUC__)\nchar * _strdup_printf(const char * fmt, ...) __attribute__((format(printf, 1, 2)));\n#else\nchar * _strdup_printf(const char * fmt, ...);\n#endif/' "$dest/lsoda_internal.h"
-perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\) \{/char * _strdup_printf(const char * fmt, ...) {\n\tchar one[1];/; s/int s = vsnprintf\(NULL, 0, fmt, va\);/int s = vsnprintf(one, sizeof one, fmt, va);/' "$dest/strdup_printf.c"
+perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\) \{/char * _strdup_printf(const char * fmt, ...) {\n\tchar one[1];\n\tif (fmt == NULL) return NULL;/; s/int s = vsnprintf\(NULL, 0, fmt, va\);/int s = vsnprintf(one, sizeof one, fmt, va);/' "$dest/strdup_printf.c"
 # 7. No abort() in solsy().
 perl -0pi -e 's/\t\tabort\(\);/\t\treturn 0;/' "$dest/solsy.c"
 # 6. (void) for empty parameter lists.

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 char * _strdup_printf(const char * fmt, ...) {
 	char one[1];
+	if (fmt == NULL) return NULL;
 	va_list va;
 	va_start(va, fmt);
 	int s = vsnprintf(one, sizeof one, fmt, va);

@@ -3,6 +3,7 @@
 # against the closed forms on the cases that have one.
 
 test_that("LSODA matches both oracles on every general and linear case", {
+  skip_under_gctorture()
   cases <- c(oracle_cases_of_class("linear"), oracle_cases_of_class("general"))
   expect_gte(length(cases), 60L)
   for (case in cases) {
@@ -23,6 +24,7 @@ test_that("LSODA matches both oracles on every general and linear case", {
 })
 
 test_that("Dormand-Prince matches both oracles where it can start", {
+  skip_under_gctorture()
   cases <- c(oracle_cases_of_class("linear"), oracle_cases_of_class("general"))
   for (case in cases) {
     c <- oracle_case(case)
@@ -51,6 +53,7 @@ test_that("at the default tolerances both solvers stay near the oracles", {
 })
 
 test_that("every closed-form case: the closed form against LSODA on its equations", {
+  skip_under_gctorture()
   for (case in oracle_cases_of_class("closed-form")) {
     c <- oracle_case(case)
     m <- pmx_ode_model(c$rx)

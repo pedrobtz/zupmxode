@@ -24,5 +24,5 @@ a9135df127613c6f37944d6886e4647f886d87bddfe4cd08b3556192b6d8c012  ./liblsoda/met
 8475a606cd2eef65bab7606643dedf2095fcba1079b97311bf0f13bc08ca1eca  ./liblsoda/scaleh.c
 8ff4728ce9e93a3406e715813468ef1c377aeb8666a26854de0fda2fc1cced8e  ./liblsoda/solsy.c
 1f3499243ec8306357aa2cda837168fdb5ab9891c36dede2afe4a3d5a268b4cb  ./liblsoda/stoda.c
-2f0e108e8b9bffa43cc0374d49a20d63239e1cff0eab22aed6f7d5c7058cd8a6  ./liblsoda/strdup_printf.c
+7a0e1612173816466c57aed32ee46fcb6e4545ee14b169454151bb3e9ed7b6f6  ./liblsoda/strdup_printf.c
 153711411973cdf7ce08f39db34d144596eea38611c3d615d5abfbe4aba9952d  ./liblsoda/vmnorm.c

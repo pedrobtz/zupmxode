@@ -2,6 +2,7 @@
 # mrgsolve's PKMODEL (design §7), on every closed-form case of the corpus.
 
 test_that("every closed-form corpus case matches both oracles", {
+  skip_under_gctorture()
   cases <- oracle_cases_of_class("closed-form")
   expect_gte(length(cases), 24L)
   for (case in cases) {
