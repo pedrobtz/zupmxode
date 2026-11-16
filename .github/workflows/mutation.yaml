@@ -1,0 +1,22 @@
+on:
+  schedule:
+    - cron: "37 19 * * 0"
+  workflow_dispatch:
+
+name: mutation
+
+permissions:
+  contents: read
+
+# Mull mutates src/core/ and runs tests/c/test_replay, which replays corpus
+# cases through the core bit for bit against pmx_ode_solve() (tools/
+# make-c-replay.R). Reported, never gated: the survivors are read in the
+# assurance review, and one with no oracle becomes an issue.
+jobs:
+  mutation:
+    uses: pedrobtz/r-actions/.github/workflows/mutation.yml@v1
+    with:
+      build: make -C tests/c test_replay_mull CC="$MULL_CC"
+      tests: tests/c/test_replay_mull
+      include: |
+        .*/src/core/.*

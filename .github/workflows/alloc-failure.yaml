@@ -1,0 +1,30 @@
+on:
+  schedule:
+    # The sweep restarts R once per allocation: a schedule, not a check of
+    # every pull request.
+    - cron: "37 18 * * 0"
+  workflow_dispatch:
+
+name: alloc-failure
+
+permissions:
+  contents: read
+
+# tools/alloc-exercise.R fails one allocation per run, from the end of its
+# baseline (package loaded, model compiled) on: the solve's records,
+# LSODA's workspace, prepared subjects, arenas and the interpreter tier's
+# copy. Each run must end in an R error, never a crash.
+jobs:
+  alloc-failure:
+    uses: pedrobtz/r-actions/.github/workflows/alloc-failure.yml@v1
+    with:
+      run: R_ENABLE_JIT=0 Rscript tools/alloc-exercise.R
+      baseline-run: R_ENABLE_JIT=0 Rscript tools/alloc-exercise.R baseline
+      expect-pattern: "cannot allocate|memory exhausted|[Cc]ould( not|n.t) (re-)?allocate|Failed to realloc|Out of memory|cannot make an arena"
+      # zupmxode's own allocation errors: the sweep must reach the package.
+      target-pattern: "cannot allocate a (model|subject)|cannot make an arena|cannot allocate the interpreter|cannot allocate LSODA|MIR failed: cannot allocate memory"
+      min-target-hits: 1
+      # R's regular expressions and gzfile() crash on a failed allocation
+      # themselves; listed apart, unless the crash is under the package.
+      ignore-crash-pattern: "^ 1: (grepl?|sub|gsub|regexpr|gregexpr|strsplit|gzfile)\\("
+      max-allocations: 600
