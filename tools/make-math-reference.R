@@ -23,6 +23,32 @@ grid <- unique(grid)
 M <- function(x) mpfr(x, bits)
 
 # probit by Newton's method on pnorm() at 200 bits, from qnorm()'s start.
+# |x f'(x)| at 200 bits: how far the result moves when x moves by one
+# rounding, the floor below which no implementation can be held near a
+# zero of f (sin(pi), lgamma(1)). The test's error unit is
+# eps * max(|f(x)|, |x f'(x)|): ulps away from zeros, the argument's own
+# conditioning at them.
+deriv_scale <- list(
+  exp = function(X) abs(X * exp(X)), log = function(X) M(rep(1, length(X))),
+  sqrt = function(X) sqrt(X) / 2, abs = function(X) abs(X),
+  floor = function(X) M(rep(0, length(X))), ceiling = function(X) M(rep(0, length(X))),
+  sin = function(X) abs(X * cos(X)), cos = function(X) abs(X * sin(X)),
+  tan = function(X) abs(X / cos(X)^2),
+  gamma = function(X) abs(X * gamma(X) * digamma_mpfr(X)),
+  lgamma = function(X) abs(X * digamma_mpfr(X)),
+  logit = function(X) abs(1 / (1 - X)),
+  expit = function(X) { e <- 1 / (1 + exp(-X)); abs(X * e * (1 - e)) },
+  probit = NULL,
+  probitInv = function(X) abs(X * dnorm(X))
+)
+
+# digamma at 200 bits, from lgamma by a central difference at a step far
+# below the precision that matters for a scale.
+digamma_mpfr <- function(X) {
+  h <- M(2)^-80
+  (lgamma(X + h) - lgamma(X - h)) / (2 * h)
+}
+
 probit_ref <- function(p) {
   z <- M(stats::qnorm(p))
   P <- M(p)
@@ -50,15 +76,16 @@ double_bits <- function(x) {
 }
 
 rows <- list()
-add <- function(f, x, y, ref) {
+add <- function(f, x, y, ref, scale) {
   keep <- is.finite(ref) & is.finite(x) & is.finite(y)
+  scale[!is.finite(scale)] <- 0
   if (any(keep)) {
     rows[[length(rows) + 1L]] <<- data.frame(
       # IEEE bit patterns: R's decimal reader is not exact where long
       # double is double (macOS arm64), and it reads hexadecimal
       # subnormals as 0, so neither text form round-trips everywhere.
       f = f, x = double_bits(x[keep]), y = double_bits(y[keep]),
-      ref = double_bits(ref[keep])
+      ref = double_bits(ref[keep]), scale = double_bits(scale[keep])
     )
   }
 }
@@ -71,15 +98,21 @@ for (f in names(ref1)) {
   # the argument wrongly (sin(1e300) is 0.979, not -0.818). No model
   # reaches that range (design §4.1).
   if (f %in% c("sin", "cos", "tan")) x <- x[abs(x) <= 1e5]
-  ref <- if (f == "probit") {
-    vapply(x, function(p) asNumeric(probit_ref(p)), 0)
+  if (f == "probit") {
+    Z <- do.call(c, lapply(x, probit_ref))
+    ref <- asNumeric(Z)
+    scale <- asNumeric(abs(M(x) / dnorm(Z)))
   } else {
-    suppressWarnings(asNumeric(ref1[[f]](M(x))))
+    ref <- suppressWarnings(asNumeric(ref1[[f]](M(x))))
+    scale <- suppressWarnings(asNumeric(deriv_scale[[f]](M(x))))
   }
-  add(f, x, rep(0, length(x)), ref)
+  add(f, x, rep(0, length(x)), ref, scale)
 }
 g <- expand.grid(x = grid[grid > 0], y = c(0.5, 2, 3, -1, 1 / 3, 10.5, -2.5))
-add("pow", g$x, g$y, suppressWarnings(asNumeric(M(g$x)^M(g$y))))
+P <- M(g$x)^M(g$y)
+# x^y moves with x by |y x^y| and with y by |y log(x) x^y|.
+add("pow", g$x, g$y, suppressWarnings(asNumeric(P)),
+    suppressWarnings(asNumeric(pmax(abs(M(g$y) * P), abs(M(g$y) * log(M(g$x)) * P)))))
 
 out <- file.path("tests", "testthat", "fixtures", "math-reference.csv")
 utils::write.csv(do.call(rbind, rows), out, row.names = FALSE)

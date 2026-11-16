@@ -224,7 +224,11 @@ NaN and zero each function gives what R gives, since those are the values
 a model written for rxode2 sees; `^` follows R's rules (a zero base has
 no sign, a negative base to an infinite power is NaN). For finite
 arguments each function is held to the true value, computed with Rmpfr
-at 200 bits, within a bound per function (half a unit in the last place
+at 200 bits, within a bound per function, in units in the
+last place; for the functions whose result passes through zero (`sin`,
+`cos`, `tan`, `log`, `lgamma`, `logit`, `probit`) in units of
+eps × max(|f(x)|, |x f′(x)|), the result's movement under one rounding
+of x, since no library rounds correctly at a zero (half a unit in the last place
 for `sqrt`, a few for the rest), not to R's result: R's `gamma()` and
 `lgamma()` are further off than the C library's (by 228 units at
 `gamma(100.5)`). The sign of a zero result is C's, as rxode2's compiled

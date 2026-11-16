@@ -11,7 +11,7 @@ test_that("each function is within its error of the 200-bit value", {
     s <- r[r$f == f, ]
     got <- .Call(zpx_math_r, ir_math[[f]], s$x,
                  if (ir_math[[f]] >= 32L) s$y else double())
-    err <- ulps(got, s$ref)
+    err <- ulps(got, s$ref, if (f %in% math_through_zero) s$scale else 0)
     i <- which.max(err)
     expect_lte(max(err), math_ulps[[f]], label = sprintf(
       "%s ulps (worst at x = %.17g, y = %.17g: %.17g, true %.17g)",

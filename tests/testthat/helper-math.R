@@ -10,9 +10,19 @@ math_r <- list(
 
 math_special <- c(NaN, -Inf, Inf, 0, -0, 1, -1, -3, -10, 2)
 
-# Units in the last place of `ref` between got and ref.
-ulps <- function(got, ref) {
-  spacing <- 2^pmax(floor(log2(abs(ref))) - 52, -1074)
+# The error in units of eps * max(|ref|, scale), scale being |x f'(x)|
+# (tools/make-math-reference.R): units in the last place away from a zero
+# of f, and the argument's own conditioning at one, where no library is
+# correctly rounded (mingw-w64's sin(pi) is 1.22460635e-16, the truth
+# 1.22464680e-16).
+# Only the functions whose result passes through zero are measured so:
+# elsewhere the unit is the plain ulp, which a library can meet and which
+# keeps, for one, probitInv's lower tail held to its rounding.
+math_through_zero <- c("sin", "cos", "tan", "log", "lgamma", "logit", "probit")
+
+ulps <- function(got, ref, scale = 0) {
+  spacing <- pmax(2^pmax(floor(log2(abs(ref))) - 52, -1074),
+                  scale * .Machine$double.eps)
   abs(got - ref) / spacing
 }
 
@@ -40,6 +50,7 @@ reference <- function() {
   r$x <- bits_double(r$x)
   r$y <- bits_double(r$y)
   r$ref <- bits_double(r$ref)
+  r$scale <- bits_double(r$scale)
   r
 }
 
