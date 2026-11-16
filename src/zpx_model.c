@@ -83,8 +83,10 @@ static SEXP model_new(SEXP code, SEXP consts, SEXP s_tier, int fail_after) {
   m->code = malloc(m->ncode * sizeof(int) + 1);
   m->consts = malloc(m->nconsts * sizeof(double) + 1);
   if (m->code == NULL || m->consts == NULL) Rf_error("cannot allocate a model");
-  memcpy(m->code, INTEGER(code), m->ncode * sizeof(int));
-  memcpy(m->consts, REAL(consts), m->nconsts * sizeof(double));
+  /* R's data pointer of an empty vector is not a valid address (R-devel
+   * gives 0x1), and memcpy() from it is undefined even for no bytes. */
+  if (m->ncode > 0) memcpy(m->code, INTEGER(code), m->ncode * sizeof(int));
+  if (m->nconsts > 0) memcpy(m->consts, REAL(consts), m->nconsts * sizeof(double));
   unsigned long long h = 1469598103934665603ULL;
   const unsigned char *bytes = (const unsigned char *) m->code;
   for (size_t i = 0; i < m->ncode * sizeof(int); i++) h = (h ^ bytes[i]) * 1099511628211ULL;

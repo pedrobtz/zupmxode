@@ -98,9 +98,13 @@ SEXP zpx_subject_new(SEXP model, SEXP time, SEXP evid, SEXP amt, SEXP cmt, SEXP 
   s->ntheta = INTEGER(counts)[0];
   s->neta = INTEGER(counts)[1];
   s->ncov = ncov;
-  memcpy(s->kind, INTEGER(kind), (size_t) npar * sizeof(int));
-  memcpy(s->index, INTEGER(index), (size_t) npar * sizeof(int));
-  memcpy(s->cov, REAL(cov), (size_t) n * (size_t) ncov * sizeof(double));
+  /* Not from an empty vector: its data pointer is not a valid address
+   * (R-devel gives 0x1), and memcpy() from it is undefined. */
+  if (npar > 0) {
+    memcpy(s->kind, INTEGER(kind), (size_t) npar * sizeof(int));
+    memcpy(s->index, INTEGER(index), (size_t) npar * sizeof(int));
+  }
+  if (n > 0 && ncov > 0) memcpy(s->cov, REAL(cov), (size_t) n * (size_t) ncov * sizeof(double));
   for (int i = 0; i < n; i++) {
     zpx_record *r = &s->rec[i];
     r->time = REAL(time)[i];
