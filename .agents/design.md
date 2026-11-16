@@ -542,7 +542,8 @@ rxode2 or mrgsolve read a case otherwise.
   off, a positive one on. `EVID 3` resets every compartment; `EVID 4`
   resets and doses at once.
 - **`MDV`:** with no `EVID` column, a record with an `AMT` above 0 is a
-  dose, one with `MDV` 1 marks a time (`EVID 2`), and the rest are
+  dose, as is a steady-state infusion with none (`AMT` 0, `RATE` and
+  `SS` set); one with `MDV` 1 marks a time (`EVID 2`), and the rest are
   observations (decided 2026-11-16, Stage 9, as NONMEM reads them).
   Given `EVID`, `MDV` is not read. Other columns, `DV` among them, are
   ignored unless named like a parameter.
