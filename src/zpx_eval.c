@@ -84,11 +84,16 @@ int zpx_subject_eval(const zupmxode_model *m, const zupmxode_subject *s, const d
   double add2 = opts->add * opts->add, prop2 = opts->prop * opts->prop;
   for (int i = 0; i < nobs; i++) {
     pred[i] = f[i];
+    /* The product is rounded before the sum: a fused multiply-add (clang
+     * contracts on arm64, gcc across statements) would round once and
+     * give another double than the formula as written, on one platform
+     * and not the next (R-CMD-check, macOS arm64, Stage 12). */
+    volatile double pv = prop2 * (f[i] * f[i]);
     switch (opts->error_model) {
     case ZUPMXODE_ERR_ADD:
     case ZUPMXODE_ERR_LNORM: var[i] = isnan(f[i]) ? f[i] : add2; break;
-    case ZUPMXODE_ERR_PROP: var[i] = prop2 * (f[i] * f[i]); break;
-    default: var[i] = add2 + prop2 * (f[i] * f[i]); break;
+    case ZUPMXODE_ERR_PROP: var[i] = pv; break;
+    default: var[i] = add2 + pv; break;
     }
   }
   if (r.failed_row >= 0) return ZUPMXODE_SOLVER_FAILED;
