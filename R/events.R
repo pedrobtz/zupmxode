@@ -86,13 +86,15 @@ as_records <- function(events, model) {
     x
   }
   amt <- num("AMT", 0)
-  # With no EVID, NONMEM's reading: a dose where there is an amount, else
-  # an observation, unless MDV says the record is not one (it then marks a
+  # With no EVID, NONMEM's reading: a dose where there is an amount, or a
+  # steady-state infusion with none (AMT 0, RATE and SS set); else an
+  # observation, unless MDV says the record is not one (it then marks a
   # time, EVID 2). Given EVID, MDV is not read.
   evid <- if ("EVID" %in% names(d)) {
     num("EVID", 0)
   } else {
-    ifelse(amt > 0, 1, ifelse(num("MDV", 0) != 0, 2, 0))
+    dose <- amt > 0 | (num("SS", 0) > 0 & num("RATE", 0) != 0)
+    ifelse(dose, 1, ifelse(num("MDV", 0) != 0, 2, 0))
   }
   cmt <- if ("CMT" %in% names(d)) d$CMT else rep(1L, n)
   if (is.factor(cmt)) cmt <- as.character(cmt)

@@ -300,6 +300,13 @@ test_that("bad arguments are refused with their class", {
   e2 <- ev
   e2$eta.cl <- 0
   bad(events = e2)
+  # Row and column names that disagree.
+  om2 <- diag(c(0.1, 0.2))
+  dimnames(om2) <- list(c("eta.cl", "eta.v"), c("eta.v", "eta.cl"))
+  bad(omega = om2)
+  # Unary operators on an error model.
+  expect_error(-add(1), class = "pmx_ode_error_argument")
+  expect_error(!prop(1), class = "pmx_ode_error_argument")
   expect_error(add(-1), class = "pmx_ode_error_argument")
   expect_error(prop(NA), class = "pmx_ode_error_argument")
   expect_error(lnorm("a"), class = "pmx_ode_error_argument")
@@ -329,4 +336,30 @@ test_that("an unnamed omega takes the model's eta parameters in order", {
   )
   expect_true(all(s$eta.v == 0))
   expect_false(all(s$eta.cl == 0))
+})
+
+test_that("an empty omega draws nothing, as NULL does", {
+  m <- pmx_ode_model({
+    cl <- exp(tcl); v <- exp(tv); ka <- exp(tka)
+    cp <- linCmt()
+  })
+  withr::local_seed(1)
+  a <- pmx_ode_sim(m, sim_events(), theta = sim_theta(), omega = matrix(0, 0, 0), n = 2)
+  withr::local_seed(1)
+  b <- pmx_ode_sim(m, sim_events(), theta = sim_theta(), n = 2)
+  expect_identical(a, b)
+})
+
+test_that("an eta named like an event column is refused", {
+  m <- pmx_ode_model({
+    cl <- exp(tcl + ii); v <- exp(tv); ka <- exp(tka)
+    cp <- linCmt()
+  })
+  expect_error(pmx_ode_sim(m, sim_events(), theta = sim_theta(), omega = c(ii = 0.1)),
+               class = "pmx_ode_error_argument")
+  # Refused for its name, not later for a value the column swallowed.
+  expect_snapshot(
+    pmx_ode_sim(m, sim_events(), theta = sim_theta(), omega = c(ii = 0.1)),
+    error = TRUE
+  )
 })

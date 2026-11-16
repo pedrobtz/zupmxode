@@ -204,6 +204,13 @@ check_omega <- function(omega, model, call) {
   if (!isTRUE(all.equal(omega, t(omega), check.attributes = FALSE))) {
     bad("must be symmetric")
   }
+  if (
+    !is.null(rownames(omega)) &&
+      !is.null(colnames(omega)) &&
+      !identical(rownames(omega), colnames(omega))
+  ) {
+    bad("has row and column names that differ")
+  }
   names <- rownames(omega)
   if (is.null(names)) {
     names <- colnames(omega)
@@ -232,9 +239,20 @@ check_omega <- function(omega, model, call) {
       ", not a parameter of the model"
     ))
   }
-  ev <- eigen(omega, symmetric = TRUE, only.values = TRUE)$values
-  if (k && min(ev) < -1e-6 * max(abs(ev), 1)) {
-    bad("must be positive semi-definite")
+  # An event column's name is read as that column, never as a parameter.
+  taken <- names[toupper(names) %in% c(event_columns, "ID")]
+  if (length(taken)) {
+    bad(paste0(
+      "names ",
+      paste0("`", taken, "`", collapse = ", "),
+      ", which an event table reads as its own column"
+    ))
+  }
+  if (k) {
+    ev <- eigen(omega, symmetric = TRUE, only.values = TRUE)$values
+    if (min(ev) < -1e-6 * max(abs(ev), 1)) {
+      bad("must be positive semi-definite")
+    }
   }
   dimnames(omega) <- list(names, names)
   omega
@@ -363,6 +381,13 @@ resid_model <- function(type, sd, call) {
 
 #' @export
 Ops.pmx_ode_resid <- function(e1, e2) {
+  if (missing(e2)) {
+    pmx_abort(
+      "pmx_ode_error_argument",
+      "Error models combine only as add(a) + prop(b).",
+      call = sys.call()
+    )
+  }
   types <- c(
     if (inherits(e1, "pmx_ode_resid")) e1$type,
     if (inherits(e2, "pmx_ode_resid")) e2$type

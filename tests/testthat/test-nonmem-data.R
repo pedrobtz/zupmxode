@@ -76,3 +76,14 @@ test_that("a NONMEM table of several subjects keeps each subject's records", {
   expect_identical(got$id, rep(c(30, 10, 20), each = nrow(one)))
   expect_identical(got$cp, rep(one$cp, 3))
 })
+
+test_that("with no EVID, a steady-state infusion with no amount is a dose, as NONMEM reads it", {
+  m <- pmx_ode_model("d/dt(central) <- -cl / v * central\ncp <- central / v")
+  p <- c(cl = 1, v = 10)
+  with_evid <- data.frame(ID = 1, TIME = 0:2, AMT = 0, RATE = c(10, 0, 0),
+                          SS = c(1, 0, 0), II = 0, CMT = 1, EVID = c(1, 0, 0))
+  nm <- with_evid
+  nm$EVID <- NULL
+  nm$MDV <- c(1, 0, 0)
+  expect_identical(pmx_ode_solve(m, nm, p), pmx_ode_solve(m, with_evid, p))
+})
