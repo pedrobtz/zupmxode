@@ -70,8 +70,11 @@ subject_method <- function(model, opts, rec) {
 #' @param events An event table: from [pmx_ode_events()], or a NONMEM-style
 #'   data frame with columns `ID`, `TIME`, `EVID`, `AMT`, `CMT`, `RATE`,
 #'   `DUR`, `II`, `ADDL` and `SS` (any case; all but `TIME` optional).
+#'   With no `EVID`, a record with an `AMT` above 0 is a dose, one with
+#'   `MDV` 1 marks a time (`EVID` 2), and the rest are observations; given
+#'   `EVID`, `MDV` is not read. `CMT` is a compartment's name or number.
 #'   Columns named like a model parameter are covariates, each record
-#'   carrying its value.
+#'   carrying its value; other columns, such as `DV`, are ignored.
 #' @param params The model's parameters, a named numeric vector. A
 #'   covariate column of `events` takes the place of its parameter.
 #' @return A data frame with `id`, `time`, one column per compartment and

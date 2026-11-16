@@ -343,6 +343,29 @@ calls C once with every subject's parameters, and returns a data frame.
 `pmx_ode_solve()` is the deterministic core: parameters per subject in,
 predictions out.
 
+How `pmx_ode_sim()` reads its arguments (decided 2026-11-16, Stage 9):
+
+- **Etas** are the parameters `omega` names, or, with an unnamed
+  `omega`, the model's parameters whose names start with `eta`, in the
+  order the model uses them (nlmixr2's convention). A named vector is a
+  diagonal `omega`. They reach the solve as covariate columns, one value
+  per subject, so the C side is called once as for any solve.
+- **Draws**, in this order: the etas as `MASS::mvrnorm(n, 0, omega)` makes
+  them from the same seed (an eigendecomposition, so a positive
+  semi-definite `omega` works), one row per subject; then, for each
+  `sigma` entry in turn, one standard normal per observation record.
+  The count depends on the table alone, never on the solve, so a failed
+  subject leaves the other draws where they were.
+- **Error models** take rxode2's spellings, as the language does:
+  `add(sd)`, `prop(sd)`, `lnorm(sd)` for the exponential, and
+  `add(a) + prop(b)` for the combined model, whose variances add
+  (nlmixr2's `combined2`, its default). Each takes a standard deviation.
+- **Output:** the solve's columns unchanged, then each subject's etas,
+  then each `sigma` entry with residual error as `<name>_obs`, so the
+  prediction and the observation sit side by side.
+- **Subjects:** a table of one subject is copied `n` times, numbered 1
+  to `n`; a table of several is simulated once per subject.
+
 ### 4.6 Per-subject evaluation (C API)
 
 An estimator does not want a data frame back. It wants, for one subject
@@ -518,6 +541,12 @@ rxode2 or mrgsolve read a case otherwise.
 - **`EVID 2`** marks a time; a negative `CMT` switches that compartment
   off, a positive one on. `EVID 3` resets every compartment; `EVID 4`
   resets and doses at once.
+- **`MDV`:** with no `EVID` column, a record with an `AMT` above 0 is a
+  dose, as is a steady-state infusion with none (`AMT` 0, `RATE` and
+  `SS` set); one with `MDV` 1 marks a time (`EVID 2`), and the rest are
+  observations (decided 2026-11-16, Stage 9, as NONMEM reads them).
+  Given `EVID`, `MDV` is not read. Other columns, `DV` among them, are
+  ignored unless named like a parameter.
 - **Covariates** are the table's other columns named like parameters,
   each record carrying its value, so a value holds from its record until
   the next (last observation carried forward); the model's lag and

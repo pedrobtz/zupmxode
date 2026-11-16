@@ -25,7 +25,7 @@ is the one §4.7 describes.
 | 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | [#27](https://github.com/pedrobtz/zupmxode/pull/27) | 2026-11-16 |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | [#28](https://github.com/pedrobtz/zupmxode/pull/28) | 2026-11-16 |
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | [#29](https://github.com/pedrobtz/zupmxode/pull/29) | 2026-11-16 |
-| 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | | |
+| 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | [#32](https://github.com/pedrobtz/zupmxode/pull/32) | 2026-11-16 |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | | |
 | 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | | |
 | 12 | [Assurance](#stage-12--assurance) | quick | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | | |
