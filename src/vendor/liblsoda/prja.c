@@ -58,7 +58,7 @@ int prja(struct lsoda_context_t * ctx, double *y)
 /*
    Do LU decomposition on P.
 */
-		dgefa(_C(wm), neq, _C(ipvt), &ier);
+		lsoda_dgefa(_C(wm), neq, _C(ipvt), &ier);
 		if (ier != 0)
 		return 0;
 	}

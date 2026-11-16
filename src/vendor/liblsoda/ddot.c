@@ -1,9 +1,9 @@
 /**********
- * ddot.c *
+ * lsoda_ddot.c *
  **********/
 
 double 
-ddot(int n, double dx[], int incx, double dy[], int incy)
+lsoda_ddot(int n, double dx[], int incx, double dy[], int incy)
 
 /*
    Purpose : Inner product dx . dy
@@ -20,10 +20,10 @@ ddot(int n, double dx[], int incx, double dy[], int incy)
 
    --- Output ---
 
-   ddot : dot product dx . dy, 0 if n <= 0
+   lsoda_ddot : dot product dx . dy, 0 if n <= 0
 
 
-   ddot = sum for i = 0 to n-1 of
+   lsoda_ddot = sum for i = 0 to n-1 of
    dx[lx+i*incx] * dy[ly+i*incy] where lx = 1 if
    incx >= 0, else lx = (-incx)*(n-1)+1, and ly
    is defined in a similar way using incy.

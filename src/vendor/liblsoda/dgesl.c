@@ -1,13 +1,13 @@
 #include "blas.h"
 /***********
- * dgesl.c *
+ * lsoda_dgesl.c *
  ***********/
 
 void 
-dgesl(double **a, int n, int *ipvt, double b[], int job)
+lsoda_dgesl(double **a, int n, int *ipvt, double b[], int job)
 
 /*
-   Purpose : dgesl solves the linear system
+   Purpose : lsoda_dgesl solves the linear system
    a * x = b or Transpose(a) * x = b
    using the factors computed by dgeco or degfa.
 
@@ -15,10 +15,10 @@ dgesl(double **a, int n, int *ipvt, double b[], int job)
    On Entry :
 
       a    : double matrix of dimension ( n+1, n+1 ),
-             the output from dgeco or dgefa.
+             the output from dgeco or lsoda_dgefa.
              The 0-th row and column are not used.
       n    : the row dimension of a.
-      ipvt : the pivot vector from degco or dgefa.
+      ipvt : the pivot vector from degco or lsoda_dgefa.
       b    : the right hand side vector.
       job  : = 0       to solve a * x = b,
              = nonzero to solve Transpose(a) * x = b.
@@ -36,10 +36,10 @@ dgesl(double **a, int n, int *ipvt, double b[], int job)
       singularity but it is often caused by improper argments or
       improper setting of the pointers of a.  It will not occur
       if the subroutines are called correctly and if dgeco has
-      set rcond > 0 or dgefa has set info = 0.
+      set rcond > 0 or lsoda_dgefa has set info = 0.
 
 
-   BLAS : daxpy, ddot
+   BLAS : lsoda_daxpy, lsoda_ddot
 */
 
 {
@@ -56,14 +56,14 @@ dgesl(double **a, int n, int *ipvt, double b[], int job)
    First solve L * y = b.
 */
 		for (k = 1; k <= n; k++) {
-			t = ddot(k - 1, a[k], 1, b, 1);
+			t = lsoda_ddot(k - 1, a[k], 1, b, 1);
 			b[k] = (b[k] - t) / a[k][k];
 		}
 /*
    Now solve U * x = y.
 */
 		for (k = n - 1; k >= 1; k--) {
-			b[k] = b[k] + ddot(n - k, a[k] + k, 1, b + k, 1);
+			b[k] = b[k] + lsoda_ddot(n - k, a[k] + k, 1, b + k, 1);
 			j = ipvt[k];
 			if (j != k) {
 				t = b[j];
@@ -85,7 +85,7 @@ dgesl(double **a, int n, int *ipvt, double b[], int job)
 			b[j] = b[k];
 			b[k] = t;
 		}
-		daxpy(n - k, t, a[k] + k, 1, b + k, 1);
+		lsoda_daxpy(n - k, t, a[k] + k, 1, b + k, 1);
 	}
 /*
    Now solve Transpose(L) * x = y.
@@ -93,7 +93,7 @@ dgesl(double **a, int n, int *ipvt, double b[], int job)
 	for (k = n; k >= 1; k--) {
 		b[k] = b[k] / a[k][k];
 		t = -b[k];
-		daxpy(k - 1, t, a[k], 1, b, 1);
+		lsoda_daxpy(k - 1, t, a[k], 1, b, 1);
 	}
 
 }

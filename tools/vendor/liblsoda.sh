@@ -24,6 +24,11 @@
 #   9. ERROR(), hardfailure() and softfailure() take their format in
 #      __VA_ARGS__, portable C99, not GNU's , ## __VA_ARGS__; the message's
 #      " @(file:line)" suffix goes with it.
+#  11. The BLAS routines are renamed lsoda_daxpy, lsoda_ddot, lsoda_dgefa,
+#      lsoda_dgesl, lsoda_dscal, lsoda_idamax: under the plain names the
+#      dynamic linker bound liblsoda's calls to the BLAS R links (OpenBLAS's
+#      Fortran idamax_, which takes pointers), reading an int as an address
+#      (found by gcc ASan, Stage 6).
 #  10. _strdup_printf() is declared with printf's format attribute, so the
 #      compiler checks every message against its arguments, and measures
 #      the length into a one-byte buffer rather than NULL, returning NULL
@@ -76,6 +81,10 @@ perl -0pi -e 's/#define hardfailure\(fmt,\.\.\.\) \\\n\{ \\\n\tERROR\(fmt, ## __
 # 10. The format attribute, and no NULL buffer.
 perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\);/#if defined(__GNUC__)\nchar * _strdup_printf(const char * fmt, ...) __attribute__((format(printf, 1, 2)));\n#else\nchar * _strdup_printf(const char * fmt, ...);\n#endif/' "$dest/lsoda_internal.h"
 perl -0pi -e 's/char \* _strdup_printf\(char \* fmt, \.\.\.\) \{/char * _strdup_printf(const char * fmt, ...) {\n\tchar one[1];\n\tif (fmt == NULL) return NULL;/; s/int s = vsnprintf\(NULL, 0, fmt, va\);/int s = vsnprintf(one, sizeof one, fmt, va);/' "$dest/strdup_printf.c"
+# 11. Rename the BLAS routines, at every use and definition.
+for f in "$dest"/*.c "$dest"/*.h; do
+  perl -pi -e 's/\b(daxpy|ddot|dgefa|dgesl|dscal|idamax)\b/lsoda_$1/g' "$f"
+done
 # 7. No abort() in solsy().
 perl -0pi -e 's/\t\tabort\(\);/\t\treturn 0;/' "$dest/solsy.c"
 # 6. (void) for empty parameter lists.

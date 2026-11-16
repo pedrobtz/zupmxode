@@ -1,11 +1,11 @@
 /************
- * idamax.c *
+ * lsoda_idamax.c *
  ************/
 
 #include <math.h>
 
 int 
-idamax(int n, double dx[], int incx)
+lsoda_idamax(int n, double dx[], int incx)
 
 /* Purpose : Find largest component of double vector dx
 
@@ -19,11 +19,11 @@ idamax(int n, double dx[], int incx)
 
    --- Output ---
 
-   idamax : smallest index, 0 if n <= 0
+   lsoda_idamax : smallest index, 0 if n <= 0
 
 
    Find smallest index of maximum magnitude of dx.
-   idamax = first i, i=1 to n, to minimize fabs( dx[1-incx+i*incx] ).
+   lsoda_idamax = first i, i=1 to n, to minimize fabs( dx[1-incx+i*incx] ).
 
 */
 

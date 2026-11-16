@@ -1,5 +1,5 @@
 /***********
- * daxpy.c *
+ * lsoda_daxpy.c *
  ***********/
 
 /*
@@ -11,7 +11,7 @@ To: whitbeck@sanjuan.wrc.unr.edu
 */
 
 void 
-daxpy(int n, double da, double dx[], int incx, double dy[], int incy)
+lsoda_daxpy(int n, double da, double dx[], int incx, double dy[], int incy)
 
 /*
    Purpose : To compute

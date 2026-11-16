@@ -1,10 +1,10 @@
 
 /***********
- * dscal.c *
+ * lsoda_dscal.c *
  ***********/
 
 void 
-dscal(int n, double da, double dx[], int incx)
+lsoda_dscal(int n, double da, double dx[], int incx)
 
 /* Purpose : scalar vector multiplication
 

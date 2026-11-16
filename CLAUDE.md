@@ -171,7 +171,7 @@ stages are 2, 6, 8 and the three closing ones.
 in `src/vendor/liblsoda/`. `tools/vendor/liblsoda.sh` makes the tree from
 that commit and is the only place it is changed; `tools/vendor/verify`
 (the `vendor` workflow) rebuilds it and compares byte for byte. The
-patches, all in that script (8 to 10 found by Stage 6's full run):
+patches, all in that script (8 to 11 found by Stage 6's full run):
 
 1. No console output: `printf`/`fprintf(stderr, …)` become `LSODA_LOG`,
    which does nothing (the messages are in `ctx->error`).
@@ -189,7 +189,12 @@ patches, all in that script (8 to 10 found by Stage 6's full run):
 9. `ERROR()`, `hardfailure()` and `softfailure()` are C99 variadic macros,
    not GNU's `, ## __VA_ARGS__` (a significant warning under clang 23).
 10. `_strdup_printf()` has printf's format attribute, so the compiler
-    checks every message, and measures into a one-byte buffer, not NULL.
+    checks every message, measures into a one-byte buffer, not NULL, and
+    returns NULL for a NULL format.
+11. The BLAS routines are `lsoda_daxpy` … `lsoda_idamax`: under the plain
+    names the linker bound them to the BLAS R links (OpenBLAS's Fortran
+    `idamax_`, by pointer), so an `int` was read as an address. Every
+    symbol is hidden too (`$(C_VISIBILITY)`), but `R_init_zupmxode`.
 
 To change the pin or a patch: edit the script or `manifest.tsv`, run
 `sh tools/vendor/liblsoda.sh`, regenerate `tools/vendor/checksums.sha256`

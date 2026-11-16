@@ -1,20 +1,20 @@
 #include "blas.h"
 
 /***********
- * dgefa.c *
+ * lsoda_dgefa.c *
  ***********/
 
 void 
-dgefa(double **a, int n, int *ipvt, int *info)
+lsoda_dgefa(double **a, int n, int *ipvt, int *info)
 
 /*
-   Purpose : dgefa factors a double matrix by Gaussian elimination.
+   Purpose : lsoda_dgefa factors a double matrix by Gaussian elimination.
 
-   dgefa is usually called by dgeco, but it can be called directly
+   lsoda_dgefa is usually called by dgeco, but it can be called directly
    with a saving in time if rcond is not needed.
-   (Time for dgeco) = (1+9/n)*(time for dgefa).
+   (Time for dgeco) = (1+9/n)*(time for lsoda_dgefa).
 
-   This c version uses algorithm kji rather than the kij in dgefa.f.
+   This c version uses algorithm kji rather than the kij in lsoda_dgefa.f.
    Note that the fortran version input variable lda is not needed.
 
 
@@ -37,13 +37,13 @@ dgefa(double **a, int n, int *ipvt, int *info)
       *info : = 0 normal value,
               = k if U[k][k] == 0.  This is not an error
                 condition for this subroutine, but it does
-                indicate that dgesl or dgedi will divide by
+                indicate that lsoda_dgesl or dgedi will divide by
                 zero if called.  Use rcond in dgeco for
                 a reliable indication of singularity.
 
                 Notice that the calling program must use &info.
 
-   BLAS : daxpy, dscal, idamax
+   BLAS : lsoda_daxpy, lsoda_dscal, lsoda_idamax
 */
 
 {
@@ -58,7 +58,7 @@ dgefa(double **a, int n, int *ipvt, int *info)
    Find j = pivot index.  Note that a[k]+k-1 is the address of
    the 0-th element of the row vector whose 1st element is a[k][k].
 */
-		j = idamax(n - k + 1, a[k] + k - 1, 1) + k - 1;
+		j = lsoda_idamax(n - k + 1, a[k] + k - 1, 1) + k - 1;
 		ipvt[k] = j;
 /*
    Zero pivot implies this row already triangularized.
@@ -79,7 +79,7 @@ dgefa(double **a, int n, int *ipvt, int *info)
    Compute multipliers.
 */
 		t = -1. / a[k][k];
-		dscal(n - k, t, a[k] + k, 1);
+		lsoda_dscal(n - k, t, a[k] + k, 1);
 /*
    Column elimination with row indexing.
 */
@@ -89,7 +89,7 @@ dgefa(double **a, int n, int *ipvt, int *info)
 				a[i][j] = a[i][k];
 				a[i][k] = t;
 			}
-			daxpy(n - k, t, a[k] + k, 1, a[i] + k, 1);
+			lsoda_daxpy(n - k, t, a[k] + k, 1, a[i] + k, 1);
 		}
 	}			/* end k-loop  */
 
