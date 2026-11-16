@@ -28,7 +28,7 @@ is the one §4.7 describes.
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | [#32](https://github.com/pedrobtz/zupmxode/pull/32) | 2026-11-16 |
 | 10 | [Per-subject evaluation and the C API](#stage-10--per-subject-evaluation-and-the-c-api) | quick | [#12](https://github.com/pedrobtz/zupmxode/issues/12) | [#33](https://github.com/pedrobtz/zupmxode/pull/33) | 2026-11-16 |
 | 11 | [Benchmarks and README](#stage-11--benchmarks-and-readme) | quick | [#13](https://github.com/pedrobtz/zupmxode/issues/13) | [#38](https://github.com/pedrobtz/zupmxode/pull/38) | 2026-11-16 |
-| 12 | [Assurance](#stage-12--assurance) | full | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | | 2026-11-16 |
+| 12 | [Assurance](#stage-12--assurance) | full | [#14](https://github.com/pedrobtz/zupmxode/issues/14) | [#39](https://github.com/pedrobtz/zupmxode/pull/39) | 2026-11-16 |
 | 13 | [Full CI](#stage-13--full-ci) | full | [#15](https://github.com/pedrobtz/zupmxode/issues/15) | | |
 | 14 | [v0.1.0 readiness](#stage-14--v010-readiness) | full | [#16](https://github.com/pedrobtz/zupmxode/issues/16) | | |
 | 15 | [Review](#stage-15--review) | full | [#17](https://github.com/pedrobtz/zupmxode/issues/17) | | |
