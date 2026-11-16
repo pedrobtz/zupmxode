@@ -4,6 +4,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
+#include <R_ext/Visibility.h>
 
 #include "core/core.h"
 
@@ -23,6 +24,7 @@ SEXP zpx_ir_eval_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP zpx_math_r(SEXP, SEXP, SEXP);
 SEXP zpx_schedule_r(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 SEXP zpx_solve_closed(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+SEXP zpx_solve_general(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
   {"zupmxode_core_abi_r", (DL_FUNC) &zupmxode_core_abi_r, 0},
@@ -38,10 +40,11 @@ static const R_CallMethodDef call_methods[] = {
   {"zpx_math_r", (DL_FUNC) &zpx_math_r, 3},
   {"zpx_schedule_r", (DL_FUNC) &zpx_schedule_r, 14},
   {"zpx_solve_closed", (DL_FUNC) &zpx_solve_closed, 17},
+  {"zpx_solve_general", (DL_FUNC) &zpx_solve_general, 17},
   {NULL, NULL, 0}
 };
 
-void R_init_zupmxode(DllInfo *dll) {
+attribute_visible void R_init_zupmxode(DllInfo *dll) {
   R_registerRoutines(dll, NULL, call_methods, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);

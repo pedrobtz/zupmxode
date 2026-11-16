@@ -92,7 +92,7 @@ ir_asm <- function(blocks = list(), ny = 0L, npar = 0L, nwork = 0L,
             nreg <<- max(nreg, r + 1L)
             r
           },
-          k = pool(as.numeric(a)),
+          k = pool(ir_number(a)),
           i = as.integer(a),
           f = unname(ir_math[a]),
           j = unname(labels[a])
@@ -108,6 +108,24 @@ ir_asm <- function(blocks = list(), ny = 0L, npar = 0L, nwork = 0L,
   }
   new_ir(c(ir_magic, ir_version, as.integer(c(ny, npar, nwork)),
            length(consts), desc, code), consts)
+}
+
+# A constant as the assembler reads it: "b" and the 16 hexadecimal digits of
+# its IEEE bits, as the compiler writes every constant, or a decimal
+# number, as tests write them by hand. The bits are what the compiler
+# uses: R's decimal reader is exact only where long double has more bits
+# than double, and is not under valgrind or on macOS arm64.
+ir_number <- function(a) {
+  if (grepl("^b[0-9a-f]{16}$", a)) {
+    bytes <- as.raw(strtoi(substring(a, seq(2, 16, 2), seq(3, 17, 2)), 16L))
+    return(readBin(bytes, "double", size = 8, endian = "big"))
+  }
+  as.numeric(a)
+}
+
+# The constant's assembler form: "b" and its IEEE bits.
+ir_bits <- function(x) {
+  paste0("b", paste(format(writeBin(as.double(x), raw(), endian = "big")), collapse = ""))
 }
 
 new_ir <- function(code, consts) {

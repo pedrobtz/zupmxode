@@ -2,6 +2,7 @@
 # mrgsolve's PKMODEL (design §7), on every closed-form case of the corpus.
 
 test_that("every closed-form corpus case matches both oracles", {
+  skip_under_gctorture()
   cases <- oracle_cases_of_class("closed-form")
   expect_gte(length(cases), 24L)
   for (case in cases) {
@@ -104,10 +105,12 @@ test_that("several subjects are solved apart", {
 test_that("the solver refuses what it cannot solve, naming why", {
   lin <- pmx_ode_model("cl <- tcl\nv <- tv\ncp <- linCmt()")
   ode <- pmx_ode_model("d/dt(x) <- -k * x")
-  expect_error(pmx_ode_solve(ode, pmx_ode_events(amt = 1, time = 1), c(k = 1)),
-               class = "pmx_ode_error_solver")
+  # A model with no closed form goes to the general solvers (Stage 6).
+  expect_equal(pmx_ode_solve(ode, pmx_ode_events(amt = 1, time = 1), c(k = 1))$x,
+               exp(-1), tolerance = 1e-5)
   expect_error(pmx_ode_solve(lin, pmx_ode_events(amt = 1, time = 1), c(tcl = -1, tv = 1)),
                class = "pmx_ode_error_solver")
+  # A compartment switched off is the general solvers' (D21).
   off <- data.frame(TIME = 0:1, EVID = c(1, 2), AMT = c(1, 0), CMT = c(1, -1))
   expect_error(pmx_ode_solve(lin, off, c(tcl = 1, tv = 1)), class = "pmx_ode_error_solver")
   expect_error(pmx_ode_solve(lin, pmx_ode_events(amt = 1, time = 1), c(tcl = 1)),

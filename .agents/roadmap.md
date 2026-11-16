@@ -22,7 +22,7 @@ is the one §4.7 describes.
 | 3 | [Parser and compiler](#stage-3--parser-and-compiler) | quick | [#5](https://github.com/pedrobtz/zupmxode/issues/5) | [#24](https://github.com/pedrobtz/zupmxode/pull/24) | 2026-11-16 |
 | 4 | [Event scheduler](#stage-4--event-scheduler) | quick | [#6](https://github.com/pedrobtz/zupmxode/issues/6) | [#25](https://github.com/pedrobtz/zupmxode/pull/25) | 2026-11-16 |
 | 5 | [Closed-form solver](#stage-5--closed-form-solver) | quick | [#7](https://github.com/pedrobtz/zupmxode/issues/7) | [#26](https://github.com/pedrobtz/zupmxode/pull/26) | 2026-11-16 |
-| 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | | |
+| 6 | [LSODA and Dormand–Prince](#stage-6--lsoda-and-dormandprince) | full | [#8](https://github.com/pedrobtz/zupmxode/issues/8) | [#27](https://github.com/pedrobtz/zupmxode/pull/27) | 2026-11-16 |
 | 7 | [Matrix exponential and solver selection](#stage-7--matrix-exponential-and-solver-selection) | quick | [#9](https://github.com/pedrobtz/zupmxode/issues/9) | | |
 | 8 | [Parallel runtime](#stage-8--parallel-runtime) | full | [#10](https://github.com/pedrobtz/zupmxode/issues/10) | | |
 | 9 | [Population simulation](#stage-9--population-simulation) | quick | [#11](https://github.com/pedrobtz/zupmxode/issues/11) | | |
@@ -382,6 +382,23 @@ tolerances.
 
 - Every Tests line exists, uses its oracle, and was seen to fail.
 - A full-profile run green on the pull request.
+
+**Deviations, 2026-11-16.**
+
+- The failure test uses a derivative that turns NaN past a time, not a
+  stiff model: no stiff model in reach fails LSODA, and a finite-time
+  blow-up is stepped over by LSODA without a failure (design §4.3).
+- Two corpus models disagree with rxode2 by design: zupmxode computes
+  their IC50 as exactly 0, as R does, and reports the 0 / 0 that follows
+  (`disagreements.md`). Two more are past Dormand-Prince's start; LSODA
+  solves them.
+- The SS cap test finds the fewest intervals that converge and checks
+  either side of it, rather than a cap fixed in advance.
+- The full run found three things the quick one did not: liblsoda's
+  stray comma (a crash on its error path, ASan), its GNU variadic macros
+  (clang 23), and folded constants read back through R's decimal parser,
+  which is inexact under valgrind and on macOS arm64. All three are fixed
+  here; the last was the valgrind finding noted on #15.
 
 **Design.** [§4.3](design.md#43-solvers-c), [§6.3](design.md#63-numerics),
 [§8](design.md#8-errors), D5.

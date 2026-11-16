@@ -276,6 +276,19 @@ depend on individual parameters and covariates.
 - **Dormand–Prince 5(4)**: written for the package, dense output for
   observation times, for non-stiff models where it beats LSODA.
 
+How the general solvers run (2026-11-16, Stage 6): each interval between
+timeline entries is integrated afresh, so a dose, an infusion's start or
+end, a reset or a parameter change is never stepped across; a run of
+observations with nothing between them is one Dormand–Prince integration
+read by its dense output. A switched-off compartment is emptied and its
+derivative held at 0 until a dose turns it on. Steady state is repeated
+dosing from empty until the state before a dose moves by less than
+`ss_tol` (1e-8 relative, with `atol`), at most `ss_cap` (1000) intervals,
+with a warning past it. A failure, or a state that stops being finite,
+leaves the subject NA from the time the solver stopped, with a warning;
+LSODA can step over a finite-time singularity (dx/dt = x²) and report
+success, which no general test separates from a large solution.
+
 The default is the most specific solver the classification allows;
 `method=` overrides it, and `pmx_ode_info(model)` says what was chosen
 and why.

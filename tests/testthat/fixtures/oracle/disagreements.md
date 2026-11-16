@@ -20,3 +20,22 @@ each of which produced a disagreement before it was set:
   engines report the observation records only.
 - Doses sort before observations at the same time, so an observation at a
   dose time is read after the dose in both.
+
+## zupmxode against the oracles
+
+Cases where zupmxode's answer is not an oracle's, each with the reading
+zupmxode follows. `test-ode.R` asserts every one.
+
+### lib_indirect_1cpt_inhi_kin_r0rmaxcrmax
+
+### lib_indirect_1cpt_inhi_kout_r0rmaxcrmax
+
+Recorded 2026-11-16 (roadmap Stage 6). With the library's initial
+parameters, `imax <- (r0 - rmax) / r0` makes `(1 - imax) * r0` equal to
+`rmax`, so `IC50 <- crmax * (rmax - (1 - imax) * r0) / (r0 - rmax)` is
+exactly 0, as R computes it too (-0). The effect's derivative then holds
+`Cc / (Cc + IC50)`, which is 0 / 0 at t = 0: NaN. zupmxode evaluates the
+model as written, so its solver fails at the start and the subject is NA
+with a warning (design §8). rxode2's C code, compiled with reordering,
+found a tiny nonzero IC50 and went on; its numbers are an accident of
+rounding, not the model's answer. mrgsolve has no port of these models.

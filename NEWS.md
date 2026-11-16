@@ -13,3 +13,6 @@
 
 * `pmx_ode_solve()` solves closed-form models (`linCmt()`) for one or more
   subjects, exactly, with time-varying covariates, resets and steady state.
+
+* `pmx_ode_solve()` solves models with no closed form, with LSODA (from the
+  bundled liblsoda) or Dormand-Prince 5(4).

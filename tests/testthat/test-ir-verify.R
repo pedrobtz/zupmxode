@@ -90,3 +90,17 @@ test_that("the assembler's output is what the verifier accepts", {
   expect_error(ir_asm(list(rhs = "mov r0")), "takes 2 operands")
   expect_error(ir_asm(list(rhs = "jmp nowhere")), "bad operand")
 })
+
+test_that("a constant reaches the IR as its exact bits", {
+  # Through text a constant would depend on R's decimal reader, which is
+  # not exact under valgrind or on macOS arm64; the compiler writes bits.
+  for (x in c(2 / 3, 0.1, pi, -0, 5e-324, .Machine$double.xmax, 1 / 3 * 1e-300)) {
+    expect_identical(writeBin(ir_number(ir_bits(x)), raw()), writeBin(x, raw()))
+    ir <- ir_asm(list(rhs = paste0("const r0 ", ir_bits(x), "\nstoreo 0 r0")),
+                 nout = c(rhs = 1))
+    expect_identical(writeBin(ir$consts, raw()), writeBin(x, raw()))
+  }
+  m <- pmx_ode_model("k <- 2 / 3\nd/dt(x) <- -k * x")
+  expect_true(any(vapply(m$ir$consts, identical, NA, 2 / 3)))
+  expect_identical(ir_number("0.5"), 0.5)
+})
