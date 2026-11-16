@@ -78,6 +78,8 @@
 <li>
 <code>src/core/dopri.[ch]</code>: Dormand-Prince 5(4) with dense output; <code>zpx_solve_general()</code> in <code>src/zpx_solve.c</code> runs LSODA or it over the timeline, with dense output across runs of observations, steady state by repeated dosing, and a failure as NA from where it happened.</li>
 <li>
+<code>src/core/expm.[ch]</code>: Padé 13 scaling and squaring; <code>zpx_solve_linear()</code> probes A and c from rhs and steps the augmented exponential. <code>R/method.R</code>: <code><a href="reference/pmx_ode_method.html">pmx_ode_method()</a></code>, <code><a href="reference/pmx_ode_info.html">pmx_ode_info()</a></code>; <code>auto_method()</code> in <code>R/solve.R</code> is the selection, and <code>subject_method()</code> sends a subject with a switched-off compartment to LSODA.</li>
+<li>
 <code>src/zpx_lower.c</code>: IR to MIR, one module and one function per block, through <code>zumir</code>’s C API and emitter; <code>zumir_import()</code> registers the table’s functions the C library lacks.</li>
 <li>
 <code>src/zpx_model.c</code>: the model’s external pointer and finalizer, and the <code>.Call</code> entries. Failures of the IR or of MIR come back as status lists; <code>R/model.R</code> raises the classed condition.</li>

@@ -91,7 +91,15 @@ in milliseconds, without a compiler.</p>
 <span><span class="co">#&gt;   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v</span></span>
 <span><span class="co">#&gt;   outputs:      ka, cl, v, cp</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pmx_ode_info</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/pmx_ode_info.html">pmx_ode_info</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;pmx_ode_info&gt;</span></span>
+<span><span class="co">#&gt;   class:        linear</span></span>
+<span><span class="co">#&gt;   solver:       expm (linear in its compartments, with coefficients constant between events (2 of at most 20 compartments))</span></span>
+<span><span class="co">#&gt;   tier:         native, lowered in 1.0 ms</span></span>
+<span><span class="co">#&gt;   compartments: depot, central</span></span>
+<span><span class="co">#&gt;   parameters:   tka, eta.ka, tcl, eta.cl, tv, eta.v</span></span>
+<span><span class="co">#&gt;   outputs:      ka, cl, v, cp</span></span>
+<span><span class="co">#&gt;   instructions: pre 12, ivl 15, rhs 13, post 9, err 0</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="solve-one-subject">Solve one subject<a class="anchor" aria-label="anchor" href="#solve-one-subject"></a>
@@ -101,7 +109,15 @@ in, predictions out, with no random draws.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pmx_ode_solve.html">pmx_ode_solve</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">ev</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>tka <span class="op">=</span> <span class="fl">0.5</span>, tcl <span class="op">=</span> <span class="fl">1</span>, tv <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>                                        eta.ka <span class="op">=</span> <span class="fl">0</span>, eta.cl <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>                                        eta.v <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   id time        depot  central       ka       cl        v       cp</span></span>
+<span><span class="co">#&gt; 1  1    0 100.00000000  0.00000 1.648721 2.718282 20.08554 0.000000</span></span>
+<span><span class="co">#&gt; 2  1    1  19.22956455 74.20375 1.648721 2.718282 20.08554 3.694387</span></span>
+<span><span class="co">#&gt; 3  1    2   3.69776153 79.08032 1.648721 2.718282 20.08554 3.937177</span></span>
+<span><span class="co">#&gt; 4  1    3   0.71106344 71.81445 1.648721 2.718282 20.08554 3.575431</span></span>
+<span><span class="co">#&gt; 5  1    4   0.13673440 63.25203 1.648721 2.718282 20.08554 3.149133</span></span>
+<span><span class="co">#&gt; 6  1    5   0.02629343 55.34724 1.648721 2.718282 20.08554 2.755577</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="simulate-a-population-reproducibly">Simulate a population, reproducibly<a class="anchor" aria-label="anchor" href="#simulate-a-population-reproducibly"></a>
@@ -121,11 +137,13 @@ same seed gives the same result at any thread count.</p>
 </h2>
 <p>The solver is the most specific one the model allows (closed form,
 matrix exponential, or a general ODE solver), and the tier is native
-code unless the platform cannot run it. <code>pmx_ode_info()</code> says
+code unless the platform cannot run it. <code><a href="../reference/pmx_ode_info.html">pmx_ode_info()</a></code> says
 which was chosen, and both can be overridden.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">pmx_ode_method</span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/pmx_ode_method.html">pmx_ode_method</a></span><span class="op">(</span><span class="fu"><a href="../reference/pmx_ode_method.html">pmx_ode_method</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"lsoda"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "lsoda"</span></span>
+<span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="fu"><a href="../reference/pmx_ode_tier.html">pmx_ode_tier</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"interp"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "interp"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="where-next">Where next<a class="anchor" aria-label="anchor" href="#where-next"></a>

@@ -22,3 +22,12 @@
 - [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
   solves models with no closed form, with LSODA (from the bundled
   liblsoda) or Dormand-Prince 5(4).
+
+- Linear models are solved exactly between events by the matrix
+  exponential.
+
+- [`pmx_ode_method()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_method.md)
+  reports and sets a model’s solver;
+  [`pmx_ode_info()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_info.md)
+  says what a model is, which solver it takes and why, its tier and how
+  long it took to compile.

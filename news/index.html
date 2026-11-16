@@ -41,6 +41,8 @@
 <li><p><code><a href="../reference/pmx_ode_events.html">pmx_ode_events()</a></code> builds a NONMEM-style event table of doses and observation times.</p></li>
 <li><p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> solves closed-form models (<code>linCmt()</code>) for one or more subjects, exactly, with time-varying covariates, resets and steady state.</p></li>
 <li><p><code><a href="../reference/pmx_ode_solve.html">pmx_ode_solve()</a></code> solves models with no closed form, with LSODA (from the bundled liblsoda) or Dormand-Prince 5(4).</p></li>
+<li><p>Linear models are solved exactly between events by the matrix exponential.</p></li>
+<li><p><code><a href="../reference/pmx_ode_method.html">pmx_ode_method()</a></code> reports and sets a model’s solver; <code><a href="../reference/pmx_ode_info.html">pmx_ode_info()</a></code> says what a model is, which solver it takes and why, its tier and how long it took to compile.</p></li>
 </ul></div>
   </main></div>
 

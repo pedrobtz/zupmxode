@@ -41,7 +41,15 @@ model output, one row per observation record.
 
 `pmx_ode_error_events` for a record that breaks a rule of the event
 table, naming the row; `pmx_ode_error_argument` for a parameter with no
-value; `pmx_ode_error_solver` when a model's class has no solver yet.
+value; `pmx_ode_error_solver` for a closed-form model whose rate
+constants are not positive.
+
+## Warnings
+
+`pmx_ode_warning_solver` when the solver fails for a subject: that
+subject's outputs are `NA` from where it failed, and the others are
+solved (design §8). `pmx_ode_warning_steady_state` when a steady state
+of a model with no closed form does not converge.
 
 ## Examples
 

@@ -79,6 +79,14 @@ See `.agents/design.md` §4 for the whole. Built so far:
   `zpx_solve_general()` in `src/zpx_solve.c` runs LSODA or it over the
   timeline, with dense output across runs of observations, steady state
   by repeated dosing, and a failure as NA from where it happened.
+- `src/core/expm.[ch]`: Padé 13 scaling and squaring;
+  `zpx_solve_linear()` probes A and c from rhs and steps the augmented
+  exponential. `R/method.R`:
+  [`pmx_ode_method()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_method.md),
+  [`pmx_ode_info()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_info.md);
+  `auto_method()` in `R/solve.R` is the selection, and
+  `subject_method()` sends a subject with a switched-off compartment to
+  LSODA.
 - `src/zpx_lower.c`: IR to MIR, one module and one function per block,
   through `zumir`’s C API and emitter; `zumir_import()` registers the
   table’s functions the C library lacks.

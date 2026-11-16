@@ -4,6 +4,10 @@
 
 - [`pmx_ode_events()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_events.md)
   : Build an event table
+- [`pmx_ode_info()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_info.md)
+  : What a model is and how it is solved
+- [`pmx_ode_method()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_method.md)
+  : The solver of a model
 - [`pmx_ode_model()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_model.md)
   : Compile a model
 - [`pmx_ode_solve()`](https://pedrobtz.github.io/zupmxode/reference/pmx_ode_solve.md)
