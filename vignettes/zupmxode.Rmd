@@ -9,13 +9,10 @@ vignette: >
 ---
 
 ```{r, include = FALSE}
-# Written from .agents/design.md before the API exists. Each chunk that
-# cannot run yet says eval = FALSE itself: R CMD check tangles the code
-# without this chunk's options, so a global setting would not reach it.
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-```{r setup, eval = TRUE}
+```{r setup}
 library(zupmxode)
 ```
 
@@ -24,7 +21,7 @@ locked-down and validated machines often lack. zupmxode runs the same
 models with nothing but R. This page compiles a one-compartment model
 with first-order absorption, and gives it a week of daily 100 mg doses:
 
-```{r, eval = TRUE}
+```{r}
 ev <- pmx_ode_events(amt = 100, ii = 24, addl = 6, cmt = "depot",
                       time = seq(0, 168, by = 1))
 ```
@@ -35,7 +32,7 @@ The model is written in rxode2's syntax and read by R's own parser, so
 existing rxode2 models run unchanged. It is compiled to native code
 in milliseconds, without a compiler.
 
-```{r, eval = TRUE}
+```{r}
 m <- pmx_ode_model({
   ka <- exp(tka + eta.ka); cl <- exp(tcl + eta.cl); v <- exp(tv + eta.v)
   d/dt(depot)   <- -ka * depot
@@ -45,7 +42,7 @@ m <- pmx_ode_model({
 m
 ```
 
-```{r, eval = TRUE}
+```{r}
 pmx_ode_info(m)
 ```
 
@@ -54,7 +51,7 @@ pmx_ode_info(m)
 `pmx_ode_solve()` is the deterministic core: parameters in, predictions
 out, with no random draws.
 
-```{r, eval = TRUE}
+```{r}
 out <- pmx_ode_solve(m, ev, params = c(tka = 0.5, tcl = 1, tv = 3,
                                         eta.ka = 0, eta.cl = 0,
                                         eta.v = 0))
@@ -67,13 +64,20 @@ Between-subject variability and residual error are drawn in R with R's
 random number generator, and the C engine stays deterministic. The same
 seed gives the same result at any thread count.
 
-```{r, eval = FALSE}
-pmx_ode_threads(8)
+```{r}
+old <- pmx_ode_threads(2)
 set.seed(1)
 sim <- pmx_ode_sim(m, ev, theta = c(tka = 0.5, tcl = 1, tv = 3),
                     omega = diag(c(0.1, 0.1, 0.1)),
-                    sigma = list(cp = prop(0.1)), n = 1000)
+                    sigma = list(cp = prop(0.1)), n = 100)
+pmx_ode_threads(old)
+head(sim[c("id", "time", "cp", "cp_obs", "eta.ka", "eta.cl", "eta.v")])
 ```
+
+The etas are the parameters `omega` names, or, as here, the model's
+parameters named `eta...` in order. Residual error comes from `add()`,
+`prop()`, their sum `add() + prop()`, or `lnorm()`; the observation with
+error sits next to the prediction as `cp_obs`.
 
 ## Choose the solver and the tier
 
@@ -82,7 +86,7 @@ exponential, or a general ODE solver), and the tier is native code unless
 the platform cannot run it. `pmx_ode_info()` says which was chosen, and
 both can be overridden.
 
-```{r, eval = TRUE}
+```{r}
 pmx_ode_method(pmx_ode_method(m, "lsoda"))
 pmx_ode_tier(pmx_ode_tier(m, "interp"))
 ```
